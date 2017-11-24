@@ -1,0 +1,14 @@
+{
+  "name": "netatmo_bmp",
+  "version": "1.0.0",
+  "description": "bmp generation for netatmo to display on e-pape",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "denis messié",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "bitmap-manipulation": "^2.0.0"
+  }
+}
