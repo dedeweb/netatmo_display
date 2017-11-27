@@ -1,12 +1,8 @@
 const bmp_lib = require('bitmap-manipulation');
 const path = require('path');
-const netatmo = require('netatmo');
-let netatmo_api = new netatmo({
-    "client_id": "5a1590ee2d3e04e0fe8b4e68",
-    "client_secret": "61xilx6nGiX4LcE8JXeocsLhLV",
-    "username": "denis.messie+netatmoapp@gmail.com",
-    "password": "{S)[#X7NT/a'rrWG",
-});
+//const netatmo = require('netatmo');
+const request = require('request-promise');
+const _ = require('lodash');
 
 bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
     let fontBitmap = font.getBitmap();
@@ -41,13 +37,14 @@ bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
         y += lineHeight;
     }
 };
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-netatmo_api.getStationsData(function(err, devices) {
-    console.log(devices);
+
+getDataFromNetatmo().then(function(data) {
+    console.log(data);
+    drawImage(data);
 });
 
-
-drawImage();
 
 
 
@@ -147,6 +144,72 @@ function drawDotLine(bitmap, palette, left,top, height) {
         }
         pixon=false;
     }
+}
+
+
+
+
+function getDataFromNetatmo() {
+    let accessToken = '';
+    return request({
+        method: 'POST',
+        uri: 'https://api.netatmo.com/oauth2/token',
+        form: {
+            client_id: "5a1590ee2d3e04e0fe8b4e68",
+            client_secret: "61xilx6nGiX4LcE8JXeocsLhLV",
+            username: "denis.messie+netatmoapp@gmail.com",
+            password: "{S)[#X7NT/a'rrWG",
+            grant_type: 'password'
+        }
+    }).then(function(data) {
+        accessToken = JSON.parse(data).access_token;
+        return request({
+            method : 'POST',
+            uri: 'https://api.netatmo.com/api/getstationsdata?access_token=' + accessToken
+        });
+    }).then(function(data) {
+        console.log('data received');
+
+        let devices = JSON.parse(data).body.devices[0];
+        let capt_ext = _.find(devices.modules, {_id: '02:00:00:13:42:00'});
+        let capt_chambre = _.find(devices.modules, {_id: '03:00:00:03:94:9a'});
+        let capt_bureau = _.find(devices.modules, {_id: '03:00:00:05:df:d2'});
+        return {
+            time: devices.last_status_store,
+            ext: {
+                temp: capt_ext.dashboard_data.Temperature,
+                hum: capt_ext.dashboard_data.Humidity,
+                temp_min: capt_ext.dashboard_data.min_temp,
+                temp_max: capt_ext.dashboard_data.max_temp,
+                temp_trend: capt_ext.dashboard_data.temp_trend
+            },
+            salon: {
+                temp: devices.dashboard_data.Temperature,
+                hum: devices.dashboard_data.Humidity,
+                temp_min: devices.dashboard_data.min_temp,
+                temp_max: devices.dashboard_data.max_temp,
+                temp_trend: devices.dashboard_data.temp_trend,
+                co2: devices.dashboard_data.CO2,
+                noise: devices.dashboard_data.Noise
+            },
+            chambre: {
+                temp: capt_chambre.dashboard_data.Temperature,
+                hum: capt_chambre.dashboard_data.Humidity,
+                temp_min: capt_chambre.dashboard_data.min_temp,
+                temp_max: capt_chambre.dashboard_data.max_temp,
+                temp_trend: capt_chambre.dashboard_data.temp_trend,
+                co2: capt_chambre.dashboard_data.CO2
+            },
+            bureau: {
+                temp: capt_bureau.dashboard_data.Temperature,
+                hum: capt_bureau.dashboard_data.Humidity,
+                temp_min: capt_bureau.dashboard_data.min_temp,
+                temp_max: capt_bureau.dashboard_data.max_temp,
+                temp_trend: capt_bureau.dashboard_data.temp_trend,
+                co2: capt_bureau.dashboard_data.CO2
+            }
+        }
+    });
 }
 
 

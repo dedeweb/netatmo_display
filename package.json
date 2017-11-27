@@ -10,6 +10,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "bitmap-manipulation": "^2.0.0",
-    "netatmo": "^2.1.0"
+    "lodash": "^4.17.4",
+    "request-promise": "^4.2.2"
   }
 }
