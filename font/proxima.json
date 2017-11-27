@@ -18,5 +18,9 @@
 	{
 		"size": 50,
 		"filename": "proxima_50px.json"
+	},
+	{
+		"size": 55,
+		"filename": "proxima_55px.json"
 	}
 ]

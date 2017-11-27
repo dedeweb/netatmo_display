@@ -9,6 +9,7 @@
   "author": "denis messié",
   "license": "GPL-3.0",
   "dependencies": {
-    "bitmap-manipulation": "^2.0.0"
+    "bitmap-manipulation": "^2.0.0",
+    "netatmo": "^2.1.0"
   }
 }
