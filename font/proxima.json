@@ -8,7 +8,15 @@
 		"filename": "proxima_18px.json"
 	},
 	{
+		"size": 32,
+		"filename": "proxima_32px.json"
+	},
+	{
 		"size": 36,
 		"filename": "proxima_36px.json"
+	},
+	{
+		"size": 50,
+		"filename": "proxima_50px.json"
 	}
 ]
