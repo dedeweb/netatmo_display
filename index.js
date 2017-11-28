@@ -3,6 +3,7 @@ const path = require('path');
 //const netatmo = require('netatmo');
 const request = require('request-promise');
 const _ = require('lodash');
+const moment = require('moment');
 
 bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
     let fontBitmap = font.getBitmap();
@@ -50,38 +51,53 @@ getDataFromNetatmo().then(function(data) {
 
 //--------------------------------------------------------------------------
 
-function drawImage() {
+function drawImage(data) {
     let bitmap = new bmp_lib.BMPBitmap(640,384);
     let palette = bitmap.palette;
     bitmap.clear(palette.indexOf(0xffffff));
     drawOutline(bitmap, palette);
 
-    drawFirstCol(bitmap, palette, 12.5,53);
-    drawCol(bitmap, palette, 160, 20, 43, 1200);
-    drawCol(bitmap, palette, 320, 20, 43, 800);
-    drawCol(bitmap, palette, 480, 20, 43, 800);
-/*
-    let font =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
-    font.setSize(36);
-    bitmap.drawTextRight(font, "61", 350 , 145);
-    font =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
-    font.setSize(18);
-    font.setColor(palette.indexOf(0x000000));
-    bitmap.drawText(font, "dB", 255, 145);
-*/
+    drawFirstCol(bitmap, palette, data.ext.temp,data.ext.hum, data.ext.temp_min, data.ext.temp_max);
+    drawCol(bitmap, palette, 160, data.salon.temp, data.salon.hum, data.salon.co2, data.salon.temp_min, data.salon.temp_max, data.salon.noise);
+    drawCol(bitmap, palette, 320, data.chambre.temp, data.chambre.hum, data.chambre.co2, data.chambre.temp_min, data.chambre.temp_max);
+    drawCol(bitmap, palette, 480, data.bureau.temp, data.bureau.hum, data.bureau.co2, data.bureau.temp_min, data.bureau.temp_max);
+
+    drawDate(bitmap, palette, data.time);
+
+
+    bitmap.drawFilledRect(0,183,640,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
+    bitmap.drawFilledRect(0,203,640,1, palette.indexOf(0xff0000), null);
+
+
+
     bitmap.save('out.bmp');
 
 }
 
+function drawDate(bitmap, palette, date) {
+    moment.locale('fr');
+    /*moment.locale('fr', {
+        monthsShort : 'janv._févr._mars_avr._mai_juin_juil._août_sept._oct._nov._déc.'.split('_'),
+        weekdays : 'dimanche_lundi_mardi_mercredi_jeudi_vendredi_samedi'.split('_'),});*/
+    let dateStr = 'mesuré le ' +  moment('' + date, 'X').format('DD MMM à HH:mm');
+    let font =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
+    font.setSize(18);
+    font.setColor(palette.indexOf(0x000000));
+    bitmap.drawTextRight(font, dateStr,635 , 165);
+}
 function drawOutline(bitmap, palette) {
     bitmap.drawFilledRect(0,0,159,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
     bitmap.drawFilledRect(161,0,158,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
     bitmap.drawFilledRect(321,0,158,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
     bitmap.drawFilledRect(481,0,159,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
     bitmap.drawFilledRect(0,20  ,640,1, palette.indexOf(0xff0000), null);
-    drawDotLine(bitmap, palette, 159, 20,364);
-    drawDotLine(bitmap, palette, 319, 20,364);
-    drawDotLine(bitmap, palette, 479, 20,364);
+    drawHorizDotLine(bitmap, palette, 160,65, 480);
+    drawHorizDotLine(bitmap, palette, 0,105, 160);
+    //bitmap.drawFilledRect(160, 65, 480, 1, palette.indexOf(0xff0000), null);
+    drawDotLine(bitmap, palette, 159, 20,183);
+    drawDotLine(bitmap, palette, 319, 20,183);
+    drawDotLine(bitmap, palette, 479, 20,140);
+
 
     let font =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
     font.setSize(18);
@@ -92,42 +108,80 @@ function drawOutline(bitmap, palette) {
     bitmap.drawText(font, "BUREAU",495 , 1);
 }
 
-function drawFirstCol(bitmap, palette, temp, hum ) {
+function drawFirstCol(bitmap, palette, temp, hum, temp_min, temp_max ) {
     let font =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
     font.setSize(55);
     font.setColor(palette.indexOf(0x000000));
-    bitmap.drawTextRight(font, '' + temp, 120, 30);
-    bitmap.drawTextRight(font, '' + hum, 120, 90);
+    bitmap.drawTextRight(font, '' + temp, 120, 25);
+    bitmap.drawTextRight(font, '' + hum, 100, 115);
 
     font =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
     font.setSize(18);
     font.setColor(palette.indexOf(0x000000));
 
     bitmap.drawText(font, "°", 125, 30);
-    bitmap.drawText(font, "%", 125, 90);
+    bitmap.drawText(font, "%", 105, 120);
+
+
+    let array_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
+    bitmap.drawBitmap(array_down_black,90,82);
+    bitmap.drawText(font, '' + temp_min + ' °', 105, 82);
+
+    let array_top_red = bmp_lib.BMPBitmap.fromFile("glyph/array_top_red.bmp");
+    bitmap.drawBitmap(array_top_red,20,86);
+    font.setColor(palette.indexOf(0xff0000));
+    bitmap.drawText(font, '' + temp_max + ' °', 35, 82);
+
 }
 
-function drawCol(bitmap, palette, x, temp, hum, co2) {
+function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) {
     let font =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
     font.setSize(36);
     font.setColor(palette.indexOf(0x000000));
-    bitmap.drawTextRight(font, '' + temp, x + 90, 25);
-    bitmap.drawTextRight(font, '' + hum, x + 90, 65);
-    if (co2 > 1000) {
-        bitmap.drawFilledRect(x + 1,105  ,158,40, null , palette.indexOf(0xff0000));
+    let fontSmall =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
+    fontSmall.setSize(18);
+    fontSmall.setColor(palette.indexOf(0x000000));
+    let fontSmallRed =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
+    fontSmallRed.setSize(18);
+    fontSmallRed.setColor(palette.indexOf(0xff0000));
+
+
+    //temp
+    bitmap.drawTextRight(font, '' + temp, x + 70, 25);
+    bitmap.drawText(fontSmall, "°", x + 75, 27);
+
+    //temp minmax
+    let array_top_red = bmp_lib.BMPBitmap.fromFile("glyph/array_top_red.bmp");
+    bitmap.drawBitmap(array_top_red, x + 95,28);
+    bitmap.drawText(fontSmallRed, '' + temp_max + ' °',  x + 112, 26);
+    let array_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
+    bitmap.drawBitmap(array_down_black,x + 95,45);
+    bitmap.drawText(fontSmall, '' + temp_min + ' °', x + 112, 43);
+
+
+    //hum = 70;
+    //hum
+    if(hum < 45 || hum > 65) {
+        bitmap.drawFilledRect(x + 1,67  ,158,43, null , palette.indexOf(0xff0000));
     }
-    bitmap.drawTextRight(font, '' + co2, x + 90, 105);
+    bitmap.drawTextRight(font, '' + hum, x + 90, 70);
+    bitmap.drawText(fontSmall, "%", x + 95, 72);
+    //co2 = 1200;
+    //co2
+    if (co2 > 1000) {
+        bitmap.drawFilledRect(x + 1,108  ,158,38, null , palette.indexOf(0xff0000));
+    }
+    bitmap.drawTextRight(font, '' + co2, x + 90, 108);
+    bitmap.drawText(fontSmall, "ppm", x + 95, 110);
 
-    font =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
-    font.setSize(18);
-    font.setColor(palette.indexOf(0x000000));
-
-
-
-    bitmap.drawText(font, "°", x + 95, 25);
-    bitmap.drawText(font, "%", x + 95, 65);
-    bitmap.drawText(font, "ppm", x + 95, 105);
-
+    //noise
+    if(noise) {
+        if(noise > 70) {
+            bitmap.drawFilledRect(x + 1,143  ,158,40, null , palette.indexOf(0xff0000));
+        }
+        bitmap.drawTextRight(font, '' + noise, x + 90, 145);
+        bitmap.drawText(fontSmall, "dB", x + 95, 147);
+    }
 }
 
 function drawDotLine(bitmap, palette, left,top, height) {
@@ -143,6 +197,19 @@ function drawDotLine(bitmap, palette, left,top, height) {
             pixon = !pixon;
         }
         pixon=false;
+    }
+}
+
+function drawHorizDotLine(bitmap, palette, left,top, width) {
+    var pixon = true;
+
+    for(var x=left; x<left+width; x++) {
+        if(pixon) {
+            bitmap.setPixel(x,top,palette.indexOf(0x000000));
+        } else {
+            bitmap.setPixel(x,top,palette.indexOf(0xffffff));
+        }
+        pixon = !pixon;
     }
 }
 
