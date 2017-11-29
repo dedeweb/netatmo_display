@@ -4,6 +4,11 @@ const path = require('path');
 const request = require('request-promise');
 const _ = require('lodash');
 const moment = require('moment');
+moment.locale('fr');
+const Wunderground = require('wunderground-api');
+let wundergroundClient = new Wunderground('16d0f3d6b33e6130', 'Grenoble', 'FRANCE');
+
+//https://peter.build/weather-underground-icons/
 
 bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
     let fontBitmap = font.getBitmap();
@@ -41,9 +46,22 @@ bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 
-getDataFromNetatmo().then(function(data) {
-    console.log(data);
-    drawImage(data);
+getDataFromNetatmo().then(function(data_netatmo) {
+    if(data_netatmo) {
+        console.log('netatmo data received');
+        wundergroundClient.forecast10day('', function (err, data_wunderground) {
+            //console.log(JSON.stringify(data));
+            if(err) {
+                console.error(err);
+            } else  if(data_wunderground) {
+                console.log('wunderground data received');
+                drawImage(data_netatmo, data_wunderground);
+            }
+
+        });
+    } else {
+        console.error('no netatmo data :(');
+    }
 });
 
 
@@ -51,31 +69,91 @@ getDataFromNetatmo().then(function(data) {
 
 //--------------------------------------------------------------------------
 
-function drawImage(data) {
+
+
+function drawImage(data_netatmo,data_wunderground) {
     let bitmap = new bmp_lib.BMPBitmap(640,384);
     let palette = bitmap.palette;
     bitmap.clear(palette.indexOf(0xffffff));
     drawOutline(bitmap, palette);
 
-    drawFirstCol(bitmap, palette, data.ext.temp,data.ext.hum, data.ext.temp_min, data.ext.temp_max);
-    drawCol(bitmap, palette, 160, data.salon.temp, data.salon.hum, data.salon.co2, data.salon.temp_min, data.salon.temp_max, data.salon.noise);
-    drawCol(bitmap, palette, 320, data.chambre.temp, data.chambre.hum, data.chambre.co2, data.chambre.temp_min, data.chambre.temp_max);
-    drawCol(bitmap, palette, 480, data.bureau.temp, data.bureau.hum, data.bureau.co2, data.bureau.temp_min, data.bureau.temp_max);
+    drawFirstCol(bitmap, palette,
+        data_netatmo.ext.temp,data_netatmo.ext.hum, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max);
+    drawCol(bitmap, palette, 160,
+        data_netatmo.salon.temp, data_netatmo.salon.hum, data_netatmo.salon.co2, data_netatmo.salon.temp_min, data_netatmo.salon.temp_max, data_netatmo.salon.noise);
+    drawCol(bitmap, palette, 320,
+        data_netatmo.chambre.temp, data_netatmo.chambre.hum, data_netatmo.chambre.co2, data_netatmo.chambre.temp_min, data_netatmo.chambre.temp_max);
+    drawCol(bitmap, palette, 480,
+        data_netatmo.bureau.temp, data_netatmo.bureau.hum, data_netatmo.bureau.co2, data_netatmo.bureau.temp_min, data_netatmo.bureau.temp_max);
 
-    drawDate(bitmap, palette, data.time);
+    drawDate(bitmap, palette, data_netatmo.time);
 
 
     bitmap.drawFilledRect(0,183,640,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
     bitmap.drawFilledRect(0,203,640,1, palette.indexOf(0xff0000), null);
 
+    for(let i=0;i<7;i++) {
+        drawForecastDay(bitmap, palette, 12 + i * 90, 183, data_wunderground.simpleforecast.forecastday[i]);
+    }
 
+    //drawForecastDay(bitmap, palette, x, y, data)
 
     bitmap.save('out.bmp');
 
 }
+function drawForecastDay(bitmap, palette, x, y, data) {
+    let day =  moment('' + data.date.epoch, 'X').format('ddd DD').toUpperCase();
+    let fontHeader =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
+    fontHeader.setSize(18);
+    fontHeader.setColor(palette.indexOf(0xffffff));
+    let fontBlack = new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
+    fontBlack.setSize(18);
+    fontBlack.setColor(palette.indexOf(0x000000));
+    let fontRed = new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
+    fontRed.setSize(18);
+    fontRed.setColor(palette.indexOf(0xff0000));
 
+    bitmap.drawFilledRect(x+89,y,2,20, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));
+    drawDotLine(bitmap, palette, x+89, y + 20,200);
+
+    bitmap.drawText(fontHeader,day,x + 15 ,y + 2);
+
+    let icon_weather = bmp_lib.BMPBitmap.fromFile('glyph/weather/' + data.icon+ '.bmp');
+    bitmap.drawBitmap(icon_weather,x+12, y + 21);
+
+    let arrow_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
+    bitmap.drawBitmap(arrow_down_black,x+4,y+82);
+    bitmap.drawText(fontBlack, '' + data.low.celsius + ' °', x+18, y+80);
+
+    let arrow_top_red = bmp_lib.BMPBitmap.fromFile("glyph/array_top_red.bmp");
+    bitmap.drawBitmap(arrow_top_red,x+47,y+82);
+    bitmap.drawText(fontRed, '' + data.high.celsius + ' °', x+61, y+80);
+
+    let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
+    bitmap.drawBitmap(wind_icon,x+4,y+100);
+    bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
+    bitmap.drawText(fontBlack, data.avewind.kph + '-' + data.maxwind.kph + ' km/h', x+10, y+120);
+
+    let rain_icon = bmp_lib.BMPBitmap.fromFile("glyph/raindrop.bmp");
+    bitmap.drawBitmap(rain_icon,x + 1,y+140);
+    bitmap.drawText(fontBlack, data.pop + '%', x+20, y+140);
+    let rainVal = Math.round(data.qpf_allday.mm);
+    if( rainVal > 0 ) {
+        bitmap.drawText(fontBlack, rainVal + 'mm', x+20, y+160);
+    }
+    let snowVal = Math.round(data.snow_allday.cm);
+    if(snowVal > 0 ) {
+        let snow_icon = bmp_lib.BMPBitmap.fromFile("glyph/snow.bmp");
+        bitmap.drawBitmap(snow_icon,x + 4,y+180);
+        bitmap.drawText(fontBlack,'' + snowVal + ' çm', x+28, y+180);
+        //hack since letter 'c' does not seems to work :'(
+        bitmap.drawFilledRect(x+28, y + 194,50,3, palette.indexOf(0xffffffff),  palette.indexOf(0xffffffff) );
+    }
+
+
+}
 function drawDate(bitmap, palette, date) {
-    moment.locale('fr');
+    //moment.locale('fr');
     /*moment.locale('fr', {
         monthsShort : 'janv._févr._mars_avr._mai_juin_juil._août_sept._oct._nov._déc.'.split('_'),
         weekdays : 'dimanche_lundi_mardi_mercredi_jeudi_vendredi_samedi'.split('_'),});*/
@@ -124,13 +202,13 @@ function drawFirstCol(bitmap, palette, temp, hum, temp_min, temp_max ) {
 
 
     let array_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
-    bitmap.drawBitmap(array_down_black,90,82);
-    bitmap.drawText(font, '' + temp_min + ' °', 105, 82);
+    bitmap.drawBitmap(array_down_black, 20, 82);
+    bitmap.drawText(font, '' + temp_min + ' °',35, 82);
 
     let array_top_red = bmp_lib.BMPBitmap.fromFile("glyph/array_top_red.bmp");
-    bitmap.drawBitmap(array_top_red,20,86);
+    bitmap.drawBitmap(array_top_red,90, 86);
     font.setColor(palette.indexOf(0xff0000));
-    bitmap.drawText(font, '' + temp_max + ' °', 35, 82);
+    bitmap.drawText(font, '' + temp_max + ' °', 105, 82);
 
 }
 
@@ -235,8 +313,6 @@ function getDataFromNetatmo() {
             uri: 'https://api.netatmo.com/api/getstationsdata?access_token=' + accessToken
         });
     }).then(function(data) {
-        console.log('data received');
-
         let devices = JSON.parse(data).body.devices[0];
         let capt_ext = _.find(devices.modules, {_id: '02:00:00:13:42:00'});
         let capt_chambre = _.find(devices.modules, {_id: '03:00:00:03:94:9a'});
