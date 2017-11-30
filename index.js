@@ -92,17 +92,22 @@ function drawImage(data_netatmo,data_wunderground) {
     bitmap.drawFilledRect(0,183,640,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
     bitmap.drawFilledRect(0,203,640,1, palette.indexOf(0xff0000), null);
 
+    let xInc = 4;
     for(let i=0;i<7;i++) {
-        drawForecastDay(bitmap, palette, 12 + i * 90, 183, data_wunderground.simpleforecast.forecastday[i]);
+        xInc += drawForecastDay(bitmap, palette, xInc, 183, data_wunderground.simpleforecast.forecastday[i]);
     }
 
-    //drawForecastDay(bitmap, palette, x, y, data)
-
+    //erase last separation line
+    bitmap.drawFilledRect(638,183,2,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
+    bitmap.drawFilledRect(638,203,2,1, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
+    bitmap.drawFilledRect(638,204,2,200, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));
     bitmap.save('out.bmp');
 
 }
 function drawForecastDay(bitmap, palette, x, y, data) {
-    let day =  moment('' + data.date.epoch, 'X').format('ddd DD').toUpperCase();
+    let momentObj = moment('' + data.date.epoch, 'X');
+    let day =  momentObj.format('ddd DD').toUpperCase();
+    let isSunday = momentObj.format('d') === '0';
     let fontHeader =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
     fontHeader.setSize(18);
     fontHeader.setColor(palette.indexOf(0xffffff));
@@ -113,13 +118,25 @@ function drawForecastDay(bitmap, palette, x, y, data) {
     fontRed.setSize(18);
     fontRed.setColor(palette.indexOf(0xff0000));
 
-    bitmap.drawFilledRect(x+89,y,2,20, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));
-    drawDotLine(bitmap, palette, x+89, y + 20,200);
+    let colWidth = 90;
 
-    bitmap.drawText(fontHeader,day,x + 15 ,y + 2);
+    if (isSunday) {
+        bitmap.drawFilledRect(x+94,y,2,20, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));
+        bitmap.drawFilledRect(x+89,y+20,4,200, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
+        bitmap.drawFilledRect(x+93,y+20,3,200, palette.indexOf(0x000000),  palette.indexOf(0x000000));
+        colWidth = 95;
+    } else {
+        bitmap.drawFilledRect(x+89,y,2,20, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));
+        drawDotLine(bitmap, palette, x+89, y + 20,200);
+    }
+
 
     let icon_weather = bmp_lib.BMPBitmap.fromFile('glyph/weather/' + data.icon+ '.bmp');
     bitmap.drawBitmap(icon_weather,x+12, y + 21);
+    bitmap.drawText(fontHeader,day,x + 15 ,y + 2);
+
+
+
 
     let arrow_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
     bitmap.drawBitmap(arrow_down_black,x+4,y+82);
@@ -139,7 +156,7 @@ function drawForecastDay(bitmap, palette, x, y, data) {
     bitmap.drawText(fontBlack, data.pop + '%', x+20, y+140);
     let rainVal = Math.round(data.qpf_allday.mm);
     if( rainVal > 0 ) {
-        bitmap.drawText(fontBlack, rainVal + 'mm', x+20, y+160);
+        bitmap.drawText(fontBlack, rainVal + ' mm', x+20, y+160);
     }
     let snowVal = Math.round(data.snow_allday.cm);
     if(snowVal > 0 ) {
@@ -150,7 +167,7 @@ function drawForecastDay(bitmap, palette, x, y, data) {
         bitmap.drawFilledRect(x+28, y + 194,50,3, palette.indexOf(0xffffffff),  palette.indexOf(0xffffffff) );
     }
 
-
+    return colWidth;
 }
 function drawDate(bitmap, palette, date) {
     //moment.locale('fr');
