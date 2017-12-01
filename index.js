@@ -5,10 +5,6 @@ const request = require('request-promise');
 const _ = require('lodash');
 const moment = require('moment');
 moment.locale('fr');
-const Wunderground = require('wunderground-api');
-let wundergroundClient = new Wunderground('16d0f3d6b33e6130', 'Grenoble', 'FRANCE');
-
-//https://peter.build/weather-underground-icons/
 
 bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
     let fontBitmap = font.getBitmap();
@@ -49,15 +45,12 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 getDataFromNetatmo().then(function(data_netatmo) {
     if(data_netatmo) {
         console.log('netatmo data received');
-        wundergroundClient.forecast10day('', function (err, data_wunderground) {
-            //console.log(JSON.stringify(data));
-            if(err) {
-                console.error(err);
-            } else  if(data_wunderground) {
-                console.log('wunderground data received');
-                drawImage(data_netatmo, data_wunderground);
-            }
-
+        return request({
+            method: 'GET',
+            uri: 'https://api.darksky.net/forecast/e15352093dc7d957ab4814250be41336/45.194444,%205.737515?lang=fr&units=ca'
+        }).then(function(data_darksky) {
+            console.log('darksky data received');
+            drawImage(data_netatmo, JSON.parse(data_darksky));
         });
     } else {
         console.error('no netatmo data :(');
@@ -71,7 +64,7 @@ getDataFromNetatmo().then(function(data_netatmo) {
 
 
 
-function drawImage(data_netatmo,data_wunderground) {
+function drawImage(data_netatmo,data_darksky) {
     let bitmap = new bmp_lib.BMPBitmap(640,384);
     let palette = bitmap.palette;
     bitmap.clear(palette.indexOf(0xffffff));
@@ -92,20 +85,68 @@ function drawImage(data_netatmo,data_wunderground) {
     bitmap.drawFilledRect(0,183,640,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
     bitmap.drawFilledRect(0,203,640,1, palette.indexOf(0xff0000), null);
 
-    let xInc = 4;
+    let xInc = 6;
     for(let i=0;i<7;i++) {
-        xInc += drawForecastDay(bitmap, palette, xInc, 183, data_wunderground.simpleforecast.forecastday[i]);
+        xInc += drawForecastDay(bitmap, palette, xInc, 183, data_darksky.daily.data[i]);
     }
 
     //erase last separation line
-    bitmap.drawFilledRect(638,183,2,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
+    /*bitmap.drawFilledRect(638,183,2,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
     bitmap.drawFilledRect(638,203,2,1, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
-    bitmap.drawFilledRect(638,204,2,200, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));
+    bitmap.drawFilledRect(638,204,2,200, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));*/
     bitmap.save('out.bmp');
 
 }
+
+function getDarkSkyIconFromCode(code) {
+    switch(code) {
+        case 'clear-day':
+        case 'clear-night':
+            return 'clear';
+        case 'rain':
+            return 'rain';
+        case 'snow':
+            return 'snow';
+        case 'sleet':
+            return 'sleet';
+        case 'wind':
+            return 'wind';
+        case 'fog':
+            return 'hazy';
+        case 'cloudy':
+            return 'cloudy';
+        case 'partly-cloudy-day':
+        case 'partly-cloudy-night':
+            return 'partlysunny';
+        default:
+            return 'unknown';
+    }
+}
+
+function bearingToDir(bearing) {
+
+    if (bearing >= 337.5 && bearing < 22.5)
+        return 'N';
+    if (bearing >= 22.5 && bearing < 67.5)
+        return 'NE';
+    if (bearing >= 67.5 && bearing < 112.5)
+        return 'E';
+    if (bearing >= 112.5 && bearing < 157.5)
+        return 'SE';
+    if (bearing >= 157.5 && bearing < 202.5)
+        return 'S';
+    if (bearing >= 202.5 && bearing < 247.5)
+        return 'SW';
+    if (bearing >= 247.5 && bearing < 292.5)
+        return 'W';
+    if (bearing >= 292.5 && bearing < 337.5)
+        return 'NW';
+
+    return 'N';
+}
+
 function drawForecastDay(bitmap, palette, x, y, data) {
-    let momentObj = moment('' + data.date.epoch, 'X');
+    let momentObj = moment('' + data.time, 'X');
     let day =  momentObj.format('ddd DD').toUpperCase();
     let isSunday = momentObj.format('d') === '0';
     let fontHeader =  new bmp_lib.Font(path.join(__dirname,'font/proxima.json'));
@@ -122,7 +163,7 @@ function drawForecastDay(bitmap, palette, x, y, data) {
 
     if (isSunday) {
         bitmap.drawFilledRect(x+94,y,2,20, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));
-        bitmap.drawFilledRect(x+89,y+20,4,200, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
+        bitmap.drawFilledRect(x+90,y+20,3,200, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
         bitmap.drawFilledRect(x+93,y+20,3,200, palette.indexOf(0x000000),  palette.indexOf(0x000000));
         colWidth = 95;
     } else {
@@ -131,7 +172,7 @@ function drawForecastDay(bitmap, palette, x, y, data) {
     }
 
 
-    let icon_weather = bmp_lib.BMPBitmap.fromFile('glyph/weather/' + data.icon+ '.bmp');
+    let icon_weather = bmp_lib.BMPBitmap.fromFile('glyph/weather/' + getDarkSkyIconFromCode(data.icon)+ '.bmp');
     bitmap.drawBitmap(icon_weather,x+12, y + 21);
     bitmap.drawText(fontHeader,day,x + 15 ,y + 2);
 
@@ -139,26 +180,30 @@ function drawForecastDay(bitmap, palette, x, y, data) {
 
 
     let arrow_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
-    bitmap.drawBitmap(arrow_down_black,x+4,y+82);
-    bitmap.drawText(fontBlack, '' + data.low.celsius + ' °', x+18, y+80);
+    bitmap.drawBitmap(arrow_down_black,x+4,y+87);
+    bitmap.drawText(fontBlack, '' + Math.round(data.temperatureLow) + ' °', x+18, y+85);
 
     let arrow_top_red = bmp_lib.BMPBitmap.fromFile("glyph/array_top_red.bmp");
-    bitmap.drawBitmap(arrow_top_red,x+47,y+82);
-    bitmap.drawText(fontRed, '' + data.high.celsius + ' °', x+61, y+80);
+    bitmap.drawBitmap(arrow_top_red,x+47,y+87);
+    bitmap.drawText(fontRed, '' + Math.round(data.temperatureHigh) + ' °', x+61, y+85);
 
-    let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
-    bitmap.drawBitmap(wind_icon,x+4,y+100);
-    bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
-    bitmap.drawText(fontBlack, data.avewind.kph + '-' + data.maxwind.kph + ' km/h', x+10, y+120);
+    /*let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
+    bitmap.drawBitmap(wind_icon,x+5,y+100);*/
+    let windDirIcon = bmp_lib.BMPBitmap.fromFile("glyph/weather/winddir/"+ bearingToDir(data.windBearing) +".bmp");
+    bitmap.drawBitmap(windDirIcon, x+5, y+110);
+    let kphIcon = bmp_lib.BMPBitmap.fromFile("glyph/kph.bmp");
+    bitmap.drawBitmap(kphIcon, x+60, y+110);
+    //bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
+    bitmap.drawTextRight(fontBlack, Math.round(data.windSpeed) + '-' + Math.round(data.windGust), x+55, y+110);
 
     let rain_icon = bmp_lib.BMPBitmap.fromFile("glyph/raindrop.bmp");
-    bitmap.drawBitmap(rain_icon,x + 1,y+140);
-    bitmap.drawText(fontBlack, data.pop + '%', x+20, y+140);
-    let rainVal = Math.round(data.qpf_allday.mm);
+    bitmap.drawBitmap(rain_icon,x + 1,y+135);
+    bitmap.drawText(fontBlack, Math.round(data.precipProbability * 100) + '%', x+20, y+135);
+    let rainVal = Math.round(data.precipIntensity*24);
     if( rainVal > 0 ) {
-        bitmap.drawText(fontBlack, rainVal + ' mm', x+20, y+160);
+        bitmap.drawText(fontBlack, rainVal + ' mm', x+20, y+158);
     }
-    let snowVal = Math.round(data.snow_allday.cm);
+    let snowVal = Math.round(data.precipAccumulation);
     if(snowVal > 0 ) {
         let snow_icon = bmp_lib.BMPBitmap.fromFile("glyph/snow.bmp");
         bitmap.drawBitmap(snow_icon,x + 4,y+180);
