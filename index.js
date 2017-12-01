@@ -207,9 +207,7 @@ function drawForecastDay(bitmap, palette, x, y, data) {
     if(snowVal > 0 ) {
         let snow_icon = bmp_lib.BMPBitmap.fromFile("glyph/snow.bmp");
         bitmap.drawBitmap(snow_icon,x + 4,y+180);
-        bitmap.drawText(fontBlack,'' + snowVal + ' çm', x+28, y+180);
-        //hack since letter 'c' does not seems to work :'(
-        bitmap.drawFilledRect(x+28, y + 194,50,3, palette.indexOf(0xffffffff),  palette.indexOf(0xffffffff) );
+        bitmap.drawText(fontBlack,'' + snowVal + ' cm', x+28, y+180);
     }
 
     return colWidth;
