@@ -300,7 +300,7 @@ function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) 
     //hum = 70;
     //hum
     if(hum < 45 || hum > 65) {
-        bitmap.drawFilledRect(x + 1,67  ,158,43, null , palette.indexOf(0xff0000));
+        bitmap.drawFilledRect(x + 1,66  ,158,43, null , palette.indexOf(0xff0000));
     }
     bitmap.drawTextRight(font, '' + hum, x + 90, 70);
     bitmap.drawText(fontSmall, "%", x + 95, 72);
