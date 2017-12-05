@@ -4,6 +4,27 @@ const path = require('path');
 const request = require('request-promise');
 const _ = require('lodash');
 const moment = require('moment');
+const winston = require('winston');
+let logger = new (winston.Logger)({
+  transports : [
+    new winston.transports.Console(
+            {
+                level: 'debug',
+                colorize: true,
+                timestamp: true
+            }),
+      new winston.transports.File(
+            {
+                level: 'info',
+                colorize: false,
+                timestamp: true,
+                json: false,
+                filename: 'log.log',
+                handleExceptions: true
+            })
+  ]
+});
+
 moment.locale('fr');
 
 bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
@@ -40,21 +61,26 @@ bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
     }
 };
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+let startTime = moment();
+logger.info('script launch');
 
 
 getDataFromNetatmo().then(function(data_netatmo) {
     if(data_netatmo) {
-        console.log('netatmo data received');
+        logger.info('netatmo data received after',  moment().diff(startTime) + 'ms');
         return request({
             method: 'GET',
             uri: 'https://api.darksky.net/forecast/e15352093dc7d957ab4814250be41336/45.194444,%205.737515?lang=fr&units=ca'
         }).then(function(data_darksky) {
-            console.log('darksky data received');
+            logger.info('darksky data received after',  moment().diff(startTime) + 'ms');
             drawImage(data_netatmo, JSON.parse(data_darksky));
+            logger.info('image rendered after',  (moment().diff(startTime) / 1000) + 's');
         });
     } else {
-        console.error('no netatmo data :(');
+        logger.error('no netatmo data :(');
     }
+}).catch(function(error) {
+  logger.error('unexpected error', error);
 });
 
 
