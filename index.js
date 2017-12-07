@@ -25,7 +25,9 @@ let logger = new (winston.Logger)({
                 timestamp: true,
                 json: false,
                 filename: 'log.log',
-                handleExceptions: true
+                handleExceptions: true,
+		maxsize: 1000000,
+		maxFiles: 5
             })
   ]
 });
