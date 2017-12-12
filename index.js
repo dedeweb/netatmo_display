@@ -6,6 +6,8 @@ const _ = require('lodash');
 const moment = require('moment');
 const spawn = require('child-process-promise').spawn;
 const winston = require('winston');
+const fs = require('fs');
+const PROD = !fs.existsSync('debug');
 
 const cmdTimeout = 60000;
 
@@ -87,35 +89,39 @@ getDataFromNetatmo().then(function(data_netatmo) {
         logger.error('no netatmo data :(');
     }
 }).then(function() {
-	let timeout = new Promise((resolve, reject) => {
-		let id = setTimeout(() => {
-			resolve('command out in '+ cmdTimeout + 'ms.');
-			clearTimeout(id);
-		}, cmdTimeout);
-	});
-	logger.info('spawning python command');
-	let promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py') , path.join(__dirname, 'out.bmp')]);
-	promiseSpawn.childProcess.stdout.on('data', function(data) {
-		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
-		if(dataStr) {
-			logger.info('py stdout:', dataStr);
-		}
-	});
-	promiseSpawn.childProcess.stderr.on('data', function(data) {
-		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
-		if(dataStr) {
-			logger.info('py stderr:', dataStr);
-		}
-	});
-	return Promise.race([
-		promiseSpawn.then(function (result) {
-			logger.info('image displayed after', getTimespan());
-		}),
-		timeout.then(function() {
-			 promiseSpawn.childProcess.kill();
-			logger.warn('image display timeout after', getTimespan());
-		})
-	]);
+	if(PROD) {
+		let timeout = new Promise((resolve, reject) => {
+			let id = setTimeout(() => {
+				resolve('command out in '+ cmdTimeout + 'ms.');
+				clearTimeout(id);
+			}, cmdTimeout);
+		});
+		logger.info('spawning python command');
+		let promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py') , path.join(__dirname, 'out.bmp')]);
+		promiseSpawn.childProcess.stdout.on('data', function(data) {
+			let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
+			if(dataStr) {
+				logger.info('py stdout:', dataStr);
+			}
+		});
+		promiseSpawn.childProcess.stderr.on('data', function(data) {
+			let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
+			if(dataStr) {
+				logger.info('py stderr:', dataStr);
+			}
+		});
+		return Promise.race([
+			promiseSpawn.then(function (result) {
+				logger.info('image displayed after', getTimespan());
+			}),
+			timeout.then(function() {
+				 promiseSpawn.childProcess.kill();
+				logger.warn('image display timeout after', getTimespan());
+			})
+		]);
+	} else {
+		logger.warn('Debug mode, not displaying ! ');
+	}
 })
 .catch(function(error) {
   logger.error('unexpected error', error);
@@ -377,7 +383,7 @@ function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) 
     //co2 = 1200;
     //co2
     if (co2 > 1000) {
-        bitmap.drawFilledRect(x + 1,108  ,158,38, null , palette.indexOf(0xff0000));
+        bitmap.drawFilledRect(x + 1, 107, 158, 38, null , palette.indexOf(0xff0000));
     }
     bitmap.drawTextRight(font, '' + co2, x + 90, 108);
     bitmap.drawText(fontSmall, "ppm", x + 95, 110);
