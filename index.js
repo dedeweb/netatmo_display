@@ -6,30 +6,36 @@ const _ = require('lodash');
 const moment = require('moment');
 const spawn = require('child-process-promise').spawn;
 const winston = require('winston');
+const schedule = require('node-schedule');
 const fs = require('fs');
 const PROD = !fs.existsSync('debug');
 
 const cmdTimeout = 60000;
+var refreshing = false;
 
 let logger = new (winston.Logger)({
   transports : [
     new winston.transports.Console(
             {
-                level: 'debug',
-                colorize: true,
-                timestamp: true,
-		handleExceptions: true
+              level: 'debug',
+              colorize: true,
+              timestamp:  function () {
+        				return moment().format('YYYY-MM-DD HH:mm:ss');
+      				},
+							handleExceptions: true
             }),
       new winston.transports.File(
             {
-                level: 'info',
-                colorize: false,
-                timestamp: true,
-                json: false,
-                filename: 'log.log',
-                handleExceptions: true,
-		maxsize: 1000000,
-		maxFiles: 5
+              level: 'info',
+              colorize: false,
+              timestamp: function () {
+        				return moment().format('YYYY-MM-DD HH:mm:ss');
+      				},
+              json: false,
+              filename: 'log.log',
+              handleExceptions: true,
+							maxsize: 1000000,
+							maxFiles: 5
             })
   ]
 });
@@ -70,70 +76,95 @@ bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
     }
 };
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-let startTime = moment();
+var startTime = moment();
 logger.info('script launch');
 
-
-getDataFromNetatmo().then(function(data_netatmo) {
-    if(data_netatmo) {
-        logger.info('netatmo data received after', getTimespan());
-        return request({
-            method: 'GET',
-            uri: 'https://api.darksky.net/forecast/e15352093dc7d957ab4814250be41336/45.194444,%205.737515?lang=fr&units=ca'
-        }).then(function(data_darksky) {
-            logger.info('darksky data received after', getTimespan());
-            drawImage(data_netatmo, JSON.parse(data_darksky));
-            logger.info('image rendered after', getTimespan());
-        });
-    } else {
-        logger.error('no netatmo data :(');
-    }
-}).then(function() {
-	if(PROD) {
-		let timeout = new Promise((resolve, reject) => {
-			let id = setTimeout(() => {
-				resolve('command out in '+ cmdTimeout + 'ms.');
-				clearTimeout(id);
-			}, cmdTimeout);
-		});
-		logger.info('spawning python command');
-		let promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py') , path.join(__dirname, 'out.bmp')]);
-		promiseSpawn.childProcess.stdout.on('data', function(data) {
-			let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
-			if(dataStr) {
-				logger.info('py stdout:', dataStr);
-			}
-		});
-		promiseSpawn.childProcess.stderr.on('data', function(data) {
-			let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
-			if(dataStr) {
-				logger.info('py stderr:', dataStr);
-			}
-		});
-		return Promise.race([
-			promiseSpawn.then(function (result) {
-				logger.info('image displayed after', getTimespan());
-			}),
-			timeout.then(function() {
-				 promiseSpawn.childProcess.kill();
-				logger.warn('image display timeout after', getTimespan());
-			})
-		]);
-	} else {
-		logger.warn('Debug mode, not displaying ! ');
-	}
-})
-.catch(function(error) {
-  logger.error('unexpected error', error);
-})
-.finally(function() {
-	logger.info('script exectued in', getTimespan());
+//run job each 10minutes + 2
+schedule.scheduleJob('2-59/10 * * * *', function(){
+  refresh();
 });
+
+//and run one time on script launch
+refresh();
+
+
+function refresh() {
+		if(refreshing) {
+			logger.warn('already refreshing, exit immediatly');
+			return;
+		}
+		logger.info('------------------------------------------------------');
+		startTime = moment();
+		refreshing = true;
+		getDataFromNetatmo().then(function(data_netatmo) {
+			if(data_netatmo) {
+					logger.info('netatmo data received after', getTimespan());
+					return request({
+							method: 'GET',
+							uri: 'https://api.darksky.net/forecast/e15352093dc7d957ab4814250be41336/45.194444,%205.737515?lang=fr&units=ca'
+					}).then(function(data_darksky) {
+							logger.info('darksky data received after', getTimespan());
+							drawImage(data_netatmo, JSON.parse(data_darksky));
+							logger.info('image rendered after', getTimespan());
+					});
+			} else {
+					logger.error('no netatmo data :(');
+			}
+	}).then(function() {
+		if(PROD) {
+			return sendToScreen();
+		} else {
+			logger.warn('Debug mode, not displaying ! ');
+		}
+	})
+	.catch(function(error) {
+		logger.error('unexpected error', error);
+	})
+	.finally(function() {
+		logger.info('image refreshed in', getTimespan());
+		refreshing = false;
+	});
+}
+
+
 
 
 
 
 //--------------------------------------------------------------------------
+
+function sendToScreen() {
+	let timeout = new Promise((resolve, reject) => {
+		let id = setTimeout(() => {
+			resolve('command out in '+ cmdTimeout + 'ms.');
+			clearTimeout(id);
+		}, cmdTimeout);
+	});
+	logger.info('spawning python command');
+	let promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py') , path.join(__dirname, 'out.bmp')]);
+	promiseSpawn.childProcess.stdout.on('data', function(data) {
+		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
+		if(dataStr) {
+			logger.info('py stdout:', dataStr);
+		}
+	});
+	promiseSpawn.childProcess.stderr.on('data', function(data) {
+		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
+		if(dataStr) {
+			logger.info('py stderr:', dataStr);
+		}
+	});
+	return Promise.race([
+		promiseSpawn.then(function (result) {
+			logger.info('image displayed after', getTimespan());
+		}),
+		timeout.then(function() {
+			 promiseSpawn.childProcess.kill();
+			logger.warn('image display timeout after', getTimespan());
+		})
+	]);
+}
+
 
 function getTimespan() {
 	let duration = moment(moment().diff(startTime));
