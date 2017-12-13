@@ -6,7 +6,6 @@ const _ = require('lodash');
 const moment = require('moment');
 const spawn = require('child-process-promise').spawn;
 const winston = require('winston');
-const schedule = require('node-schedule');
 const fs = require('fs');
 const PROD = !fs.existsSync('debug');
 
@@ -79,26 +78,43 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 var startTime = moment();
 logger.info('script launch');
 
-//run job each 10minutes + 2
-schedule.scheduleJob('2-59/10 * * * *', function(){
-  refresh();
-});
-
-//and run one time on script launch
-refresh();
+//launch process
+refresh(true);
 
 
-function refresh() {
-		if(refreshing) {
+function refresh(triggerNextUpdate) {
+		if(refreshing && !triggerNextUpdate) {
 			logger.warn('already refreshing, exit immediatly');
 			return;
 		}
 		logger.info('------------------------------------------------------');
 		startTime = moment();
-		refreshing = true;
+		
 		getDataFromNetatmo().then(function(data_netatmo) {
 			if(data_netatmo) {
 					logger.info('netatmo data received after', getTimespan());
+				
+					let lastStoreTimeSpanMs =  moment().diff( moment('' + data_netatmo.last_store_time, 'X')),
+							lastStoreTimeSpan = moment(lastStoreTimeSpanMs);
+					
+					logger.info('last store date was', lastStoreTimeSpan.minutes() + 'm' + lastStoreTimeSpan.seconds() + 's ago' );
+				
+					if(triggerNextUpdate) {
+						//netatmo refresh is every 10 minutes, we make it 11 to be sure
+						let triggerSpan = Math.abs(660000 - lastStoreTimeSpanMs);
+						logger.info('set timeout in ' + triggerSpan + 'ms' );
+						setTimeout(function () {
+							refresh(true);
+						}, triggerSpan);	
+						if(refreshing) {
+							throw 'already_refreshing';
+						}
+					} else {
+						logger.warn('Manual update : do not set trigger');
+					}
+					refreshing = true;
+					
+					
 					return request({
 							method: 'GET',
 							uri: 'https://api.darksky.net/forecast/e15352093dc7d957ab4814250be41336/45.194444,%205.737515?lang=fr&units=ca'
@@ -118,7 +134,11 @@ function refresh() {
 		}
 	})
 	.catch(function(error) {
-		logger.error('unexpected error', error);
+			if(error === 'already_refreshing') {
+				logger.warn('already refreshing ! ');
+			} else {
+				logger.error('unexpected error', error);		
+			}
 	})
 	.finally(function() {
 		logger.info('image refreshed in', getTimespan());
@@ -484,8 +504,10 @@ function getDataFromNetatmo() {
         let capt_ext = _.find(devices.modules, {_id: '02:00:00:13:42:00'});
         let capt_chambre = _.find(devices.modules, {_id: '03:00:00:03:94:9a'});
         let capt_bureau = _.find(devices.modules, {_id: '03:00:00:05:df:d2'});
+				
         return {
-            time: devices.last_status_store,
+						last_store_time:devices.last_status_store, 
+            time: devices.dashboard_data.time_utc,
             ext: {
                 temp: capt_ext.dashboard_data.Temperature,
                 hum: capt_ext.dashboard_data.Humidity,
