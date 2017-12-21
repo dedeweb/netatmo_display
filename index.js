@@ -99,7 +99,14 @@ function refresh(triggerNextUpdate) {
 
 				if (triggerNextUpdate) {
 					//netatmo refresh is every 10 minutes, we make it 11 to be sure
-					let triggerSpan = Math.abs(660000 - lastStoreTimeSpanMs);
+					let triggerSpan = 660000 - lastStoreTimeSpanMs;
+					if(triggerSpan < 0 && triggerSpan > - 300000) {
+						// 5 minutes without any info, lets refresh now ! 
+						triggerSpan = 0;
+					} else {
+						// no news for more than 15 minutes, there is probably a problem. Lets try again in in 10 minutes
+						triggerSpan = 600000;
+					}
 					logger.info('set timeout in ' + triggerSpan + 'ms');
 					setTimeout(function() {
 						refresh(true);
