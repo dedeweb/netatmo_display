@@ -230,7 +230,7 @@ function drawImage(data_netatmo, data_darksky) {
 	/*bitmap.drawFilledRect(638,183,2,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
 	bitmap.drawFilledRect(638,203,2,1, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
 	bitmap.drawFilledRect(638,204,2,200, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));*/
-	bitmap.save('out.bmp');
+	bitmap.save(path.join(__dirname,'out.bmp'));
 
 }
 
