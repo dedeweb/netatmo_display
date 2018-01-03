@@ -308,31 +308,31 @@ function drawForecastDay(bitmap, palette, x, y, data) {
 	}
 
 
-	let icon_weather = bmp_lib.BMPBitmap.fromFile('glyph/weather/' + getDarkSkyIconFromCode(data.icon) + '.bmp');
+	let icon_weather = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/' + getDarkSkyIconFromCode(data.icon) + '.bmp'));
 	bitmap.drawBitmap(icon_weather, x + 12, y + 21);
 	bitmap.drawText(fontHeader, day, x + 15, y + 2);
 
 
 
 
-	let arrow_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
+	let arrow_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
 	bitmap.drawBitmap(arrow_down_black, x + 4, y + 87);
 	bitmap.drawText(fontBlack, '' + Math.round(data.temperatureLow) + ' °', x + 18, y + 85);
 
-	let arrow_top_red = bmp_lib.BMPBitmap.fromFile("glyph/array_top_red.bmp");
+	let arrow_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
 	bitmap.drawBitmap(arrow_top_red, x + 47, y + 87);
 	bitmap.drawText(fontRed, '' + Math.round(data.temperatureHigh) + ' °', x + 61, y + 85);
 
 	/*let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
 	bitmap.drawBitmap(wind_icon,x+5,y+100);*/
-	let windDirIcon = bmp_lib.BMPBitmap.fromFile("glyph/weather/winddir/" + bearingToDir(data.windBearing) + ".bmp");
+	let windDirIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/' + bearingToDir(data.windBearing) + '.bmp'));
 	bitmap.drawBitmap(windDirIcon, x + 5, y + 110);
-	let kphIcon = bmp_lib.BMPBitmap.fromFile("glyph/kph.bmp");
+	let kphIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/kph.bmp'));
 	bitmap.drawBitmap(kphIcon, x + 60, y + 110);
 	//bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
 	bitmap.drawTextRight(fontBlack, Math.round(data.windSpeed) + '-' + Math.round(data.windGust), x + 55, y + 110);
 
-	let rain_icon = bmp_lib.BMPBitmap.fromFile("glyph/raindrop.bmp");
+	let rain_icon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop.bmp'));
 	bitmap.drawBitmap(rain_icon, x + 1, y + 135);
 	bitmap.drawText(fontBlack, Math.round(data.precipProbability * 100) + '%', x + 20, y + 135);
 	let rainVal = Math.round(data.precipIntensity * 24);
@@ -341,7 +341,7 @@ function drawForecastDay(bitmap, palette, x, y, data) {
 	}
 	let snowVal = Math.round(data.precipAccumulation);
 	if (snowVal > 0) {
-		let snow_icon = bmp_lib.BMPBitmap.fromFile("glyph/snow.bmp");
+		let snow_icon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/snow.bmp'));
 		bitmap.drawBitmap(snow_icon, x + 4, y + 180);
 		bitmap.drawText(fontBlack, '' + snowVal + ' cm', x + 28, y + 180);
 	}
@@ -399,11 +399,11 @@ function drawFirstCol(bitmap, palette, temp, hum, temp_min, temp_max) {
 	bitmap.drawText(font, "%", 105, 120);
 
 
-	let array_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
+	let array_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
 	bitmap.drawBitmap(array_down_black, 20, 82);
 	bitmap.drawText(font, '' + temp_min + ' °', 35, 82);
 
-	let array_top_red = bmp_lib.BMPBitmap.fromFile("glyph/array_top_red.bmp");
+	let array_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
 	bitmap.drawBitmap(array_top_red, 90, 86);
 	font.setColor(palette.indexOf(0xff0000));
 	bitmap.drawText(font, '' + temp_max + ' °', 105, 82);
@@ -427,10 +427,10 @@ function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) 
 	bitmap.drawText(fontSmall, "°", x + 75, 27);
 
 	//temp minmax
-	let array_top_red = bmp_lib.BMPBitmap.fromFile("glyph/array_top_red.bmp");
+	let array_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
 	bitmap.drawBitmap(array_top_red, x + 95, 28);
 	bitmap.drawText(fontSmallRed, '' + temp_max + ' °', x + 112, 26);
-	let array_down_black = bmp_lib.BMPBitmap.fromFile("glyph/array_down_black.bmp");
+	let array_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
 	bitmap.drawBitmap(array_down_black, x + 95, 45);
 	bitmap.drawText(fontSmall, '' + temp_min + ' °', x + 112, 43);
 
