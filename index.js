@@ -98,24 +98,30 @@ function refresh(triggerNextUpdate) {
 				logger.info('last store date was', lastStoreTimeSpan.minutes() + 'm' + lastStoreTimeSpan.seconds() + 's ago');
 
 				if (triggerNextUpdate) {
+					let shouldAbort = false;
 					//netatmo refresh is every 10 minutes, we make it 11 to be sure
 					let triggerSpan = 660000 - lastStoreTimeSpanMs;
 					if(triggerSpan < 0 && triggerSpan > - 300000) {
-						// trigger span is negative (between 11 and 15 minutes ago), let's try to refresh now ! 
-						logger.info('more than 10 minutes ago, refreshing now !');
-						triggerSpan = 0;
+						// trigger span is negative (between 11 and 15 minutes ago), let's refresh in 30 sec, no need to go further  ! 
+						logger.info('no update since between 11 and 15 minutes, retry in 30s !');
+						triggerSpan = 30000;
+						shouldAbort = true;
 					} else if(triggerSpan < 0)  {
 						logger.debug('timespan ms is ',lastStoreTimeSpanMs);
 						logger.debug('triggerSpan is ',triggerSpan);
 						logger.info('no news for more than 15 minutes, try again in 10 minutes');
-						// no news for more than 15 minutes, there is probably a problem. Lets try again in in 10 minutes 
+						// no news for more than 15 minutes, there is probably a problem. Lets try again in in 10 minutes. No need to go further ! 
 						triggerSpan = 600000;
+						shouldAbort = true;
 					}
 					logger.info('set timeout in ' + triggerSpan + 'ms');
 					setTimeout(function() {
 						refresh(true);
 					}, triggerSpan);
 					nextUpdateTimeoutSet = true;
+					if (shouldAbort) {
+						throw 'abort';
+					}
 					if (refreshing) {
 						throw 'already_refreshing';
 					}
@@ -146,7 +152,9 @@ function refresh(triggerNextUpdate) {
 		.catch(function(error) {
 			if (error === 'already_refreshing') {
 				logger.warn('already refreshing ! ');
-			} else {
+			} else if (error === 'abort') {
+				logger.warn('aborted ! ');
+			} else{
 				logger.error('unexpected error', error);
 			}
 		})
