@@ -87,7 +87,7 @@ function refresh(triggerNextUpdate) {
 	}
 	logger.info('------------------------------------------------------');
 	startTime = moment();
-
+	let nextUpdateTimeoutSet = false;
 	getDataFromNetatmo().then(function(data_netatmo) {
 			if (data_netatmo) {
 				logger.info('netatmo data received after', getTimespan());
@@ -115,6 +115,7 @@ function refresh(triggerNextUpdate) {
 					setTimeout(function() {
 						refresh(true);
 					}, triggerSpan);
+					nextUpdateTimeoutSet = true;
 					if (refreshing) {
 						throw 'already_refreshing';
 					}
@@ -151,6 +152,12 @@ function refresh(triggerNextUpdate) {
 		})
 		.finally(function() {
 			logger.info('image refreshed in', getTimespan());
+			if(!nextUpdateTimeoutSet && triggerNextUpdate) {
+				logger.warn('next update is not set, forcing it in 11s');
+				setTimeout(function() {
+					refresh(true);
+				}, 660000);
+			}
 			refreshing = false;
 		});
 }
