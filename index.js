@@ -9,7 +9,7 @@ const winston = require('winston');
 const fs = require('fs');
 const PROD = !fs.existsSync('debug');
 
-const cmdTimeout = 60000;
+const cmdTimeout = 70000;
 var refreshing = false;
 
 let logger = new(winston.Logger)({
@@ -29,7 +29,7 @@ let logger = new(winston.Logger)({
 				return moment().format('YYYY-MM-DD HH:mm:ss');
 			},
 			json: false,
-			filename: 'log.log',
+			filename: path.join(__dirname, 'log.log'),
 			handleExceptions: true,
 			maxsize: 1000000,
 			maxFiles: 5
@@ -183,13 +183,19 @@ function sendToScreen() {
 			logger.info('py stderr:', dataStr);
 		}
 	});
+	let spawnFinished = false;
 	return Promise.race([
 		promiseSpawn.then(function(result) {
+			spawnFinished = true;
 			logger.info('image displayed after', getTimespan());
 		}),
 		timeout.then(function() {
 			promiseSpawn.childProcess.kill();
-			logger.warn('image display timeout after', getTimespan());
+			if(!spawnFinished) {
+				logger.warn('image display timeout after', getTimespan());	
+			} else {
+				logger.debug('timeout promise finished');
+			}
 		})
 	]);
 }
