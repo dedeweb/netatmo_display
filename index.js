@@ -10,7 +10,22 @@ const fs = require('fs');
 const PROD = !fs.existsSync('debug');
 
 const cmdTimeout = 70000;
+
+//warning values
+const hum_min_warn = 40;
+const hum_max_warn = 60;
+const co2_max_warn = 1000;
+const noise_max_warn = 65;
+
+//trigger
+const trigger_time_ms = 3600000; //one hour
+const trigger_temp = 1;
+const trigger_co2 = 200;
+const trigger_hum = 5;
+
+
 var refreshing = false;
+var previous_data = null;
 
 let logger = new(winston.Logger)({
 	transports: [
@@ -101,6 +116,11 @@ function refresh(triggerNextUpdate) {
 					let shouldAbort = false;
 					//netatmo refresh is every 10 minutes, we make it 11 to be sure
 					let triggerSpan = 660000 - lastStoreTimeSpanMs;
+					if(lastStoreTimeSpanMs < 0) {
+						//should never happen :/
+						logger.warn('wrong timespan !', lastStoreTimeSpanMs);
+						triggerSpan = -1; //hack to refresh in 30s
+					}
 					if(triggerSpan < 0 && triggerSpan > - 300000) {
 						// trigger span is negative (between 11 and 15 minutes ago), let's refresh in 30 sec, no need to go further  ! 
 						logger.info('no update since between 11 and 15 minutes, retry in 30s !');
@@ -113,6 +133,9 @@ function refresh(triggerNextUpdate) {
 						// no news for more than 15 minutes, there is probably a problem. Lets try again in in 10 minutes. No need to go further ! 
 						triggerSpan = 600000;
 						shouldAbort = true;
+					} else if(triggerSpan < 300000) {
+						logger.warn('trigger span is less than 5 min, setting it to 5 min. tiggerSpan =', triggerSpan);
+						triggerSpan = 300000;
 					}
 					logger.info('set timeout in ' + triggerSpan + 'ms');
 					setTimeout(function() {
@@ -125,6 +148,11 @@ function refresh(triggerNextUpdate) {
 					if (refreshing) {
 						throw 'already_refreshing';
 					}
+					if (!shouldUpdate(previous_data, data_netatmo)) {
+						throw 'no_changes';
+					}
+					previous_data = data_netatmo;
+					
 				} else {
 					logger.warn('Manual update : do not set trigger');
 				}
@@ -154,12 +182,14 @@ function refresh(triggerNextUpdate) {
 				logger.warn('already refreshing ! ');
 			} else if (error === 'abort') {
 				logger.warn('aborted ! ');
-			} else{
+			} else if (error === 'no_changes') {
+				logger.warn('no significant changes, no screen update. ');
+			} else {
 				logger.error('unexpected error', error);
 			}
 		})
 		.finally(function() {
-			logger.info('image refreshed in', getTimespan());
+			logger.info('refresh in', getTimespan());
 			if(!nextUpdateTimeoutSet && triggerNextUpdate) {
 				logger.warn('next update is not set, forcing it in 11s');
 				setTimeout(function() {
@@ -458,14 +488,14 @@ function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) 
 
 	//hum = 70;
 	//hum
-	if (hum < 40 || hum > 60) {
+	if ( isHumWarning(hum)) {
 		bitmap.drawFilledRect(x + 1, 66, 158, 43, null, palette.indexOf(0xff0000));
 	}
 	bitmap.drawTextRight(font, '' + hum, x + 90, 70);
 	bitmap.drawText(fontSmall, "%", x + 95, 72);
 	//co2 = 1200;
 	//co2
-	if (co2 > 1000) {
+	if (isCO2Warning(co2)) {
 		bitmap.drawFilledRect(x + 1, 107, 158, 38, null, palette.indexOf(0xff0000));
 	}
 	bitmap.drawTextRight(font, '' + co2, x + 90, 108);
@@ -473,11 +503,104 @@ function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) 
 
 	//noise
 	if (noise) {
-		if (noise > 65) {
+		if (isNoiseWarning(noise)) {
 			bitmap.drawFilledRect(x + 1, 143, 158, 40, null, palette.indexOf(0xff0000));
 		}
 		bitmap.drawTextRight(font, '' + noise, x + 90, 145);
 		bitmap.drawText(fontSmall, "dB", x + 95, 147);
+	}
+}
+
+function isHumWarning(hum) {
+	return hum < hum_min_warn || hum  > hum_max_warn;
+}
+
+function isNoiseWarning(noise) {
+	return noise > noise_max_warn;
+}
+
+function isCO2Warning(co2) {
+	return co2 > co2_max_warn;
+}
+
+function shouldUpdate(lastVal, newVal) {
+	if(!lastVal || !newVal) {
+		logger.warn('no previous data');
+		return true;
+	}
+	
+	let timespan = Math.abs(moment('' + lastVal.time, 'X').diff(moment('' + newVal.time, 'X')));
+
+	if (timespan >= trigger_time_ms) {
+		logger.info('no screen refresh for one hour, refreshing now');
+		return true;
+	}
+	
+	//temp check
+	if (shouldUpdateTemp(lastVal.ext.temp, newVal.ext.temp) ||
+		shouldUpdateTemp(lastVal.salon.temp, newVal.salon.temp) ||
+		shouldUpdateTemp(lastVal.chambre.temp, newVal.chambre.temp) ||
+		shouldUpdateTemp(lastVal.bureau.temp, newVal.bureau.temp)) {
+		return true;
+	}
+	
+	//CO2 check
+	if (shouldUpdateCO2(lastVal.salon.co2, newVal.salon.co2) || 
+		shouldUpdateCO2(lastVal.chambre.co2, newVal.chambre.co2) ||
+		shouldUpdateCO2(lastVal.bureau.co2, newVal.bureau.co2)) {
+		return true;
+	}
+	
+	//hum check
+	if (shouldUpdateHum(lastVal.salon.hum, newVal.salon.hum) || 
+		shouldUpdateHum(lastVal.chambre.hum, newVal.chambre.hum) ||
+		shouldUpdateHum(lastVal.bureau.hum, newVal.bureau.hum)) {
+		return true;
+	}
+	
+	//noise check
+	if (shouldUpdateNoise(lastVal.salon.noise, newVal.salon.noise)) {
+		return true;
+	}
+	
+	//no need to update
+	return false;
+	
+}
+
+function shouldUpdateTemp(lastVal, newVal) {
+	if (Math.abs(lastVal - newVal) >= trigger_temp) {
+		logger.info('Temp significant change : old', lastVal, 'new', newVal);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function shouldUpdateCO2(lastVal, newVal) {
+	if (Math.abs(lastVal-newVal) >= trigger_co2 || isCO2Warning(lastVal) !== isCO2Warning(newVal)) {
+		logger.info('CO2 significant change : old', lastVal, 'new', newVal);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function shouldUpdateHum(lastVal, newVal) {
+	if (Math.abs(lastVal-newVal) >= trigger_hum || isHumWarning(lastVal) !== isHumWarning(newVal)) {
+		logger.info('Hum significant change : old', lastVal, 'new', newVal);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function shouldUpdateNoise(lastVal, newVal) {
+		if (isNoiseWarning(lastVal) !== isNoiseWarning(newVal)) {
+		logger.info('Noise significant change : old', lastVal, 'new', newVal);
+		return true;
+	} else {
+		return false;
 	}
 }
 
