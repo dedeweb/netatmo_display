@@ -13,7 +13,7 @@ const cmdTimeout = 70000;
 
 //warning values
 const hum_min_warn = 40;
-const hum_max_warn = 60;
+const hum_max_warn = 65;
 const co2_max_warn = 1000;
 const noise_max_warn = 65;
 
