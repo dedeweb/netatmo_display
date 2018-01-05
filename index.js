@@ -189,7 +189,7 @@ function refresh(triggerNextUpdate) {
 			}
 		})
 		.finally(function() {
-			logger.info('refresh in', getTimespan());
+			logger.info('completed in', getTimespan());
 			if(!nextUpdateTimeoutSet && triggerNextUpdate) {
 				logger.warn('next update is not set, forcing it in 11s');
 				setTimeout(function() {
@@ -532,7 +532,7 @@ function shouldUpdate(lastVal, newVal) {
 	let timespan = Math.abs(moment('' + lastVal.time, 'X').diff(moment('' + newVal.time, 'X')));
 
 	if (timespan >= trigger_time_ms) {
-		logger.info('no screen refresh for one hour, refreshing now');
+		logger.info('no screen refresh for',trigger_time_ms,'ms, refreshing now');
 		return true;
 	}
 	
