@@ -8,6 +8,8 @@ const spawn = require('child-process-promise').spawn;
 const winston = require('winston');
 const fs = require('fs');
 const PROD = !fs.existsSync('debug');
+const Gpio = require('onoff').Gpio;
+
 
 const cmdTimeout = 70000;
 
@@ -51,6 +53,20 @@ let logger = new(winston.Logger)({
 		})
 	]
 });
+
+let busyLed = new Gpio(2, 'low');
+let greenLed = new Gpio(3, 'low');
+
+//busyLed.writeSync(true);
+//greenLed.writeSync(0);
+
+function goBusy() {
+	busyLed.writeSync(1);
+}
+
+function exitBusy() {
+	busyLed.writeSync(0);
+}
 
 moment.locale('fr');
 
@@ -102,6 +118,7 @@ function refresh(triggerNextUpdate) {
 	}
 	logger.info('------------------------------------------------------');
 	startTime = moment();
+	goBusy();
 	let nextUpdateTimeoutSet = false;
 	getDataFromNetatmo().then(function(data_netatmo) {
 			if (data_netatmo) {
@@ -197,6 +214,7 @@ function refresh(triggerNextUpdate) {
 				}, 660000);
 			}
 			refreshing = false;
+			exitBusy();
 		});
 }
 
