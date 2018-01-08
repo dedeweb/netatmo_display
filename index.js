@@ -25,6 +25,9 @@ const trigger_temp = 1;
 const trigger_co2 = 200;
 const trigger_hum = 5;
 
+//flash interval
+const led_flash_interval = 1000;
+
 
 var refreshing = false;
 var previous_data = null;
@@ -54,19 +57,7 @@ let logger = new(winston.Logger)({
 	]
 });
 
-let busyLed = new Gpio(2, 'low');
-let greenLed = new Gpio(3, 'low');
-
-//busyLed.writeSync(true);
-//greenLed.writeSync(0);
-
-function goBusy() {
-	busyLed.writeSync(1);
-}
-
-function exitBusy() {
-	busyLed.writeSync(0);
-}
+let led = {};
 
 moment.locale('fr');
 
@@ -118,7 +109,7 @@ function refresh(triggerNextUpdate) {
 	}
 	logger.info('------------------------------------------------------');
 	startTime = moment();
-	goBusy();
+	goBusyGreen();
 	let nextUpdateTimeoutSet = false;
 	getDataFromNetatmo().then(function(data_netatmo) {
 			if (data_netatmo) {
@@ -181,6 +172,7 @@ function refresh(triggerNextUpdate) {
 					uri: 'https://api.darksky.net/forecast/e15352093dc7d957ab4814250be41336/45.194444,%205.737515?lang=fr&units=ca'
 				}).then(function(data_darksky) {
 					logger.info('darksky data received after', getTimespan());
+					goBusy();
 					drawImage(data_netatmo, JSON.parse(data_darksky));
 					logger.info('image rendered after', getTimespan());
 				});
@@ -188,11 +180,8 @@ function refresh(triggerNextUpdate) {
 				logger.error('no netatmo data :(');
 			}
 		}).then(function() {
-			if (PROD) {
-				return sendToScreen();
-			} else {
-				logger.warn('Debug mode, not displaying ! ');
-			}
+			goBusyFlashing();
+			return sendToScreen();
 		})
 		.catch(function(error) {
 			if (error === 'already_refreshing') {
@@ -233,7 +222,14 @@ function sendToScreen() {
 		}, cmdTimeout);
 	});
 	logger.info('spawning python command');
-	let promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py'), path.join(__dirname, 'out.bmp')]);
+	let promiseSpawn;
+	if (PROD) {
+		promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py'), path.join(__dirname, 'out.bmp')]);
+	} else {
+		logger.warn('Debug mode, no real display ! ');
+		promiseSpawn = spawn('sh', [ path.join(__dirname, 'fake_disp.sh')]);
+	}
+	
 	promiseSpawn.childProcess.stdout.on('data', function(data) {
 		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
 		if (dataStr) {
@@ -651,6 +647,86 @@ function drawHorizDotLine(bitmap, palette, left, top, width) {
 	}
 }
 
+//led management. 
+
+
+if(PROD) {
+	led = {
+		red: new Gpio(2, 'low'),
+		green: new Gpio(3, 'low')
+	}
+}
+
+var ledFlashIntervalId = 0;
+
+function ledRedOn() {
+	if(led.red) {
+		led.red.writeSync(1);
+	}
+	ledGreenOff();
+	logger.debug('[led] red ON');
+}
+
+function ledRedOff() {
+	if(led.red) {
+		led.red.writeSync(0);
+	}
+	logger.debug('[led] red OFF');
+}
+
+function ledGreenOn() {
+	if(led.green) {
+		led.green.writeSync(1);
+	}
+	ledRedOff();
+	logger.debug('[led] green ON');
+} 
+
+function ledGreenOff()  {
+	if(led.green) {
+		led.green.writeSync(0);
+	}
+	logger.debug('[led] green OFF');
+}
+
+function goBusy() {
+	if (ledFlashIntervalId) {
+		clearInterval(ledFlashIntervalId);
+	}
+	ledRedOn();
+}
+
+function goBusyGreen() {
+	if (ledFlashIntervalId) {
+		clearInterval(ledFlashIntervalId);
+	}
+	ledGreenOn();
+}
+
+function goBusyFlashing() {
+	if (ledFlashIntervalId) {
+		clearInterval(ledFlashIntervalId);
+	}
+	logger.info('red led flashing');
+	
+	let lighton = true;
+	ledFlashIntervalId = setInterval(function () {
+		if(lighton) {
+			ledRedOn();
+		} else {
+			ledRedOff();
+		}
+		lighton = !lighton; 
+	}, led_flash_interval);
+}
+
+function exitBusy() {
+	if (ledFlashIntervalId) {
+		clearInterval(ledFlashIntervalId);
+	}
+	ledRedOff();
+	ledGreenOff();
+}
 
 
 
