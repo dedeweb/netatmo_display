@@ -366,7 +366,8 @@ function drawForecastDay(bitmap, palette, x, y, data) {
 
 	if (isSunday) {
 		bitmap.drawFilledRect(x + 94, y, 2, 20, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
-		bitmap.drawFilledRect(x + 90, y + 20, 3, 200, palette.indexOf(0xff0000), palette.indexOf(0xff0000));
+		//bitmap.drawFilledRect(x + 90, y + 20, 3, 200, palette.indexOf(0xff0000), palette.indexOf(0xff0000));
+		drawDotLine(bitmap, palette, x + 91, y + 20, 200);
 		bitmap.drawFilledRect(x + 93, y + 20, 3, 200, palette.indexOf(0x000000), palette.indexOf(0x000000));
 		colWidth = 95;
 	} else {
