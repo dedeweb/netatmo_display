@@ -21,7 +21,7 @@ const noise_max_warn = 65;
 
 //trigger
 const trigger_time_ms = 7200000; //two hours
-const trigger_temp = 0.6;
+const trigger_temp = 0.8;
 const trigger_co2 = 500;
 const trigger_hum = 5;
 
