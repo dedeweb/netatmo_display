@@ -21,9 +21,11 @@ const noise_max_warn = 65;
 
 //trigger
 const trigger_time_ms = 7200000; //two hours
-const trigger_temp = 1;
+const trigger_temp = 0.6;
 const trigger_co2 = 500;
 const trigger_hum = 5;
+
+const morning_hour = 6; //trigger on ext. temp only after this hour. 
 
 //flash interval
 const led_flash_interval = 1000;
@@ -551,10 +553,14 @@ function shouldUpdate(lastVal, newVal) {
 	}
 	
 	//temp check
-	if (shouldUpdateTemp(lastVal.ext.temp, newVal.ext.temp) ||
-		shouldUpdateTemp(lastVal.salon.temp, newVal.salon.temp) ||
+	if (shouldUpdateTemp(lastVal.salon.temp, newVal.salon.temp) ||
 		shouldUpdateTemp(lastVal.chambre.temp, newVal.chambre.temp) ||
 		shouldUpdateTemp(lastVal.bureau.temp, newVal.bureau.temp)) {
+		return true;
+	}
+	
+	//for external temp, we do not trigger update at night
+	if( moment().hour() >= morning_hour && shouldUpdateTemp(lastVal.ext.temp, newVal.ext.temp)) {
 		return true;
 	}
 	
