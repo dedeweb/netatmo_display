@@ -18,6 +18,7 @@ const hum_min_warn = 40;
 const hum_max_warn = 60;
 const co2_max_warn = 1000;
 const noise_max_warn = 65;
+const noise_average_smoothing = 3;
 
 //trigger
 const trigger_time_ms = 7200000; //two hours
@@ -33,6 +34,10 @@ const led_flash_interval = 1000;
 
 var refreshing = false;
 var previous_data = null;
+var noise_values = [];
+var noise_avg_prev = 0;
+var noise_avg_curr = 0;
+
 
 let logger = new(winston.Logger)({
 	transports: [
@@ -122,6 +127,8 @@ function refresh(triggerNextUpdate) {
 
 				logger.info('last store date was', lastStoreTimeSpan.minutes() + 'm' + lastStoreTimeSpan.seconds() + 's ago');
 
+				addNoiseToTab(data_netatmo.salon.noise);
+				
 				if (triggerNextUpdate) {
 					let shouldAbort = false;
 					//netatmo refresh is every 10 minutes, we make it 11 to be sure
@@ -520,7 +527,7 @@ function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) 
 
 	//noise
 	if (noise) {
-		if (isNoiseWarning(noise)) {
+		if (isNoiseWarning(noise_avg_curr)) {
 			bitmap.drawFilledRect(x + 1, 143, 158, 40, null, palette.indexOf(0xff0000));
 		}
 		bitmap.drawTextRight(font, '' + noise, x + 90, 145);
@@ -538,6 +545,23 @@ function isNoiseWarning(noise) {
 
 function isCO2Warning(co2) {
 	return co2 > co2_max_warn;
+}
+
+function addNoiseToTab(noise) {
+	noise_avg_prev = noise_avg_curr;
+	noise_values.push(noise);
+	while(noise.length > noise_average_smoothing) {
+		noise_values.shift();
+	}
+	logger.info('noise values', JSON.stringify(noise_values));
+	if(noise_values.length === noise_average_smoothing) {
+		let sumNoise = 0;
+		for(let i=0;i<noise_average_smoothing; i++) {
+			sumNoise += noise_values[i];
+		}
+		noise_avg_curr =  sumNoise / noise_average_smoothing;
+		logger.info('noise average prev=',noise_avg_prev, 'curr=', noise_avg_curr);
+	}
 }
 
 function shouldUpdate(lastVal, newVal) {
@@ -580,9 +604,13 @@ function shouldUpdate(lastVal, newVal) {
 	}
 	
 	//noise check
-	if (shouldUpdateNoise(lastVal.salon.noise, newVal.salon.noise)) {
+
+	if (shouldUpdateNoise(noise_avg_prev, noise_avg_curr)) {
 		return true;
 	}
+	
+	
+	
 	
 	//no need to update
 	return false;
