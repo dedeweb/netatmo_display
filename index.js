@@ -7,7 +7,7 @@ const moment = require('moment');
 const spawn = require('child-process-promise').spawn;
 const winston = require('winston');
 const fs = require('fs');
-const PROD = !fs.existsSync('debug');
+const PROD = !fs.existsSync(path.join(__dirname,'debug'));
 const Gpio = require('onoff').Gpio;
 
 
@@ -18,7 +18,7 @@ const hum_min_warn = 40;
 const hum_max_warn = 60;
 const co2_max_warn = 1000;
 const noise_max_warn = 65;
-const noise_average_smoothing = 3;
+const noise_average_smoothing = 6; //6 values = 1hour
 
 //trigger
 const trigger_time_ms = 7200000; //two hours
@@ -169,6 +169,7 @@ function refresh(triggerNextUpdate) {
 						throw 'no_changes';
 					}
 					previous_data = data_netatmo;
+					commitNoiseValues();
 					
 				} else {
 					logger.warn('Manual update : do not set trigger');
@@ -548,20 +549,29 @@ function isCO2Warning(co2) {
 }
 
 function addNoiseToTab(noise) {
-	noise_avg_prev = noise_avg_curr;
 	noise_values.push(noise);
-	while(noise.length > noise_average_smoothing) {
+	while(noise_values.length > noise_average_smoothing) {
 		noise_values.shift();
 	}
 	logger.info('noise values', JSON.stringify(noise_values));
+	
+}
+
+function commitNoiseValues() {
+	noise_avg_prev = noise_avg_curr;
+	noise_avg_curr = getNewNoiseAvg();
+	logger.info('new noise average prev=',noise_avg_prev, 'curr=', noise_avg_curr);
+}
+
+function getNewNoiseAvg() {
 	if(noise_values.length === noise_average_smoothing) {
 		let sumNoise = 0;
 		for(let i=0;i<noise_average_smoothing; i++) {
 			sumNoise += noise_values[i];
 		}
-		noise_avg_curr =  sumNoise / noise_average_smoothing;
-		logger.info('noise average prev=',noise_avg_prev, 'curr=', noise_avg_curr);
+		return   sumNoise / noise_average_smoothing;
 	}
+	return 0;
 }
 
 function shouldUpdate(lastVal, newVal) {
@@ -604,8 +614,7 @@ function shouldUpdate(lastVal, newVal) {
 	}
 	
 	//noise check
-
-	if (shouldUpdateNoise(noise_avg_prev, noise_avg_curr)) {
+	if (shouldUpdateNoise(noise_avg_curr, getNewNoiseAvg())) {
 		return true;
 	}
 	
