@@ -168,6 +168,9 @@ function refresh(triggerNextUpdate) {
 					if (!shouldUpdate(previous_data, data_netatmo)) {
 						throw 'no_changes';
 					}
+					previous_data = data_netatmo;
+					commitNoiseValues();
+					
 				} else {
 					logger.warn('Manual update : do not set trigger');
 				}
@@ -181,8 +184,11 @@ function refresh(triggerNextUpdate) {
 					logger.info('darksky data received after', getTimespan());
 					goBusy();
 					drawImage(data_netatmo, JSON.parse(data_darksky));
-					previous_data = data_netatmo;
-					commitNoiseValues();
+					logger.info('image rendered after', getTimespan());
+				}).catch(function() {
+					logger.error('darksky server error ! ');
+					goBusy();
+					drawImage(data_netatmo, null);
 					logger.info('image rendered after', getTimespan());
 				});
 			} else {
@@ -295,11 +301,13 @@ function drawImage(data_netatmo, data_darksky) {
 	bitmap.drawFilledRect(0, 183, 640, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
 	bitmap.drawFilledRect(0, 203, 640, 1, palette.indexOf(0xff0000), null);
 
-	let xInc = 6;
-	for (let i = 0; i < 7; i++) {
-		xInc += drawForecastDay(bitmap, palette, xInc, 183, data_darksky.daily.data[i]);
+	if (data_darksky) {
+		let xInc = 6;
+		for (let i = 0; i < 7; i++) {
+			xInc += drawForecastDay(bitmap, palette, xInc, 183, data_darksky.daily.data[i]);
+		}
 	}
-
+	
 	//erase last separation line
 	/*bitmap.drawFilledRect(638,183,2,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
 	bitmap.drawFilledRect(638,203,2,1, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
