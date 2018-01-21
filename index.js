@@ -168,9 +168,6 @@ function refresh(triggerNextUpdate) {
 					if (!shouldUpdate(previous_data, data_netatmo)) {
 						throw 'no_changes';
 					}
-					previous_data = data_netatmo;
-					commitNoiseValues();
-					
 				} else {
 					logger.warn('Manual update : do not set trigger');
 				}
@@ -184,6 +181,8 @@ function refresh(triggerNextUpdate) {
 					logger.info('darksky data received after', getTimespan());
 					goBusy();
 					drawImage(data_netatmo, JSON.parse(data_darksky));
+					previous_data = data_netatmo;
+					commitNoiseValues();
 					logger.info('image rendered after', getTimespan());
 				});
 			} else {
