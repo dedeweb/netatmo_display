@@ -501,8 +501,8 @@ function drawOutline(bitmap, palette) {
 	drawHorizDotLine(bitmap, palette, 160, 65, 480);
 	drawHorizDotLine(bitmap, palette, 0, 105, 160);
 	//bitmap.drawFilledRect(160, 65, 480, 1, palette.indexOf(0xff0000), null);
-	drawDotLine(bitmap, palette, 159, 20, 183);
-	drawDotLine(bitmap, palette, 319, 20, 183);
+	drawDotLine(bitmap, palette, 159, 20, 163);
+	drawDotLine(bitmap, palette, 319, 20, 163);
 	drawDotLine(bitmap, palette, 479, 20, 140);
 
 
