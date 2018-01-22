@@ -13,6 +13,8 @@ const Gpio = require('onoff').Gpio;
 
 const cmdTimeout = 70000;
 
+const outputFile = path.join(__dirname,'out.bmp');
+
 //warning values
 const hum_min_warn = 40;
 const hum_max_warn = 60;
@@ -28,12 +30,16 @@ const trigger_hum = 5;
 
 const morning_hour = 6; //trigger on ext. temp only after this hour. 
 
+//forecast update times
+const forecast_update_times = ['06:00:00', '18:30:00']
+
 //flash interval
 const led_flash_interval = 1000;
 
 
 var refreshing = false;
 var previous_data = null;
+var last_darksky_update = null;
 var noise_values = [];
 var noise_avg_prev = 0;
 var noise_avg_curr = 0;
@@ -175,22 +181,24 @@ function refresh(triggerNextUpdate) {
 					logger.warn('Manual update : do not set trigger');
 				}
 				refreshing = true;
-
-
-				return request({
-					method: 'GET',
-					uri: 'https://api.darksky.net/forecast/e15352093dc7d957ab4814250be41336/45.194444,%205.737515?lang=fr&units=ca'
-				}).then(function(data_darksky) {
-					logger.info('darksky data received after', getTimespan());
-					goBusy();
-					drawImage(data_netatmo, JSON.parse(data_darksky));
-					logger.info('image rendered after', getTimespan());
-				}).catch(function() {
-					logger.error('darksky server error ! ');
-					goBusy();
+				
+				if (shouldUpdateForecast()) {
+					logger.info('updating forecast...');
+					return request({
+						method: 'GET',
+						uri: 'https://api.darksky.net/forecast/e15352093dc7d957ab4814250be41336/45.194444,%205.737515?lang=fr&units=ca'
+					}).then(function(data_darksky) {
+						logger.info('darksky data received after', getTimespan());
+						last_darksky_update = moment();
+						drawImage(data_netatmo, JSON.parse(data_darksky));
+					}).catch(function() {
+						logger.error('darksky server error ! ');
+						drawImage(data_netatmo, null);
+					});	
+				} else {
+					logger.info('no need to refresh forecast.');
 					drawImage(data_netatmo, null);
-					logger.info('image rendered after', getTimespan());
-				});
+				}
 			} else {
 				logger.error('no netatmo data :(');
 			}
@@ -239,7 +247,7 @@ function sendToScreen() {
 	logger.info('spawning python command');
 	let promiseSpawn;
 	if (PROD) {
-		promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py'), path.join(__dirname, 'out.bmp')]);
+		promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py'), outputFile]);
 	} else {
 		logger.warn('Debug mode, no real display ! ');
 		promiseSpawn = spawn('sh', [ path.join(__dirname, 'fake_disp.sh')]);
@@ -274,16 +282,30 @@ function sendToScreen() {
 	]);
 }
 
-
 function getTimespan() {
 	let duration = moment(moment().diff(startTime));
 	return duration.minutes() + 'm' + duration.seconds() + '.' + duration.milliseconds() + 's ';
 }
 
 function drawImage(data_netatmo, data_darksky) {
+	goBusy();
 	let bitmap = new bmp_lib.BMPBitmap(640, 384);
 	let palette = bitmap.palette;
-	bitmap.clear(palette.indexOf(0xffffff));
+	
+	if (!data_darksky && fs.existsSync(outputFile)) {
+		logger.info('partial refresh : refresh only netatmo data. ')
+		//start from previous bmp
+		bitmap = bmp_lib.BMPBitmap.fromFile(outputFile);
+		// and erase netatmo part, which will be freshed. 
+		bitmap.drawFilledRect(0, 0, 640, 182, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
+	} else {
+		//redraw all. 
+		logger.info('full refresh');
+		bitmap.clear(palette.indexOf(0xffffff));	
+	}
+	
+	
+	
 	drawOutline(bitmap, palette);
 
 	drawFirstCol(bitmap, palette,
@@ -297,11 +319,9 @@ function drawImage(data_netatmo, data_darksky) {
 
 	drawDate(bitmap, palette, data_netatmo.time);
 
-
-	bitmap.drawFilledRect(0, 183, 640, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
-	bitmap.drawFilledRect(0, 203, 640, 1, palette.indexOf(0xff0000), null);
-
 	if (data_darksky) {
+		bitmap.drawFilledRect(0, 183, 640, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
+		bitmap.drawFilledRect(0, 203, 640, 1, palette.indexOf(0xff0000), null);
 		let xInc = 6;
 		for (let i = 0; i < 7; i++) {
 			xInc += drawForecastDay(bitmap, palette, xInc, 183, data_darksky.daily.data[i]);
@@ -312,8 +332,8 @@ function drawImage(data_netatmo, data_darksky) {
 	/*bitmap.drawFilledRect(638,183,2,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
 	bitmap.drawFilledRect(638,203,2,1, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
 	bitmap.drawFilledRect(638,204,2,200, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));*/
-	bitmap.save(path.join(__dirname,'out.bmp'));
-
+	bitmap.save(outputFile);
+	logger.info('image rendered after', getTimespan());
 }
 
 function getDarkSkyIconFromCode(code) {
@@ -361,6 +381,34 @@ function bearingToDir(bearing) {
 		return 'NW';
 
 	return 'N';
+}
+
+function shouldUpdateForecast() {
+	let curDate = moment();
+	if(!last_darksky_update) {
+		return true;
+	}
+	
+	for(let i=0; i<forecast_update_times.length; i++) {
+		let beforeDate =  moment(forecast_update_times[i], 'HH:mm:ss');
+		let afterDate = moment(forecast_update_times[ (i+1) % forecast_update_times.length], 'HH:mm:ss');
+		
+		if(i +1 > forecast_update_times.length - 1) {
+			//add one day 
+			afterDate = afterDate.add(1, 'd');
+		} 
+		
+		logger.debug('index', i ,'between', beforeDate.format(), 'and', afterDate.format());
+		
+		if(curDate.isBetween(beforeDate, afterDate)) {
+			if (!last_darksky_update.isBetween(beforeDate, afterDate)) {
+				// we update if current time is between two dates, but not last updateDime				
+				return true;
+			}
+		}		
+	}
+	
+	return false;
 }
 
 function drawForecastDay(bitmap, palette, x, y, data) {
