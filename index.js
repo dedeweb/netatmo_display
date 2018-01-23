@@ -62,10 +62,11 @@ let logger = new(winston.Logger)({
 				return moment().format('YYYY-MM-DD HH:mm:ss');
 			},
 			json: false,
-			filename: path.join(__dirname, 'log.log'),
+			filename: path.join(__dirname, 'logs', 'log.log'),
 			handleExceptions: true,
 			maxsize: 1000000,
-			maxFiles: 5
+			maxFiles: 5,
+			tailable: true
 		})
 	]
 });
@@ -230,11 +231,6 @@ function refresh(triggerNextUpdate) {
 		});
 }
 
-
-
-
-
-
 //--------------------------------------------------------------------------
 
 function sendToScreen() {
@@ -384,19 +380,28 @@ function bearingToDir(bearing) {
 }
 
 function shouldUpdateForecast() {
-	let curDate = moment();
+	let curDate =  moment();
 	if(!last_darksky_update) {
 		return true;
 	}
 	
-	for(let i=0; i<forecast_update_times.length; i++) {
-		let beforeDate =  moment(forecast_update_times[i], 'HH:mm:ss');
-		let afterDate = moment(forecast_update_times[ (i+1) % forecast_update_times.length], 'HH:mm:ss');
+	for(let i= -1; i<forecast_update_times.length; i++) {
+		let beforeDate =  null;
+		
+		let afterDate = null;
+		
+		if (i<0) {
+			beforeDate = moment(forecast_update_times[forecast_update_times.length-1], 'HH:mm:ss').subtract(1, 'd');
+		} else {
+			beforeDate = moment(forecast_update_times[i], 'HH:mm:ss');	
+		}
 		
 		if(i +1 > forecast_update_times.length - 1) {
 			//add one day 
-			afterDate = afterDate.add(1, 'd');
-		} 
+			afterDate = moment(forecast_update_times[0], 'HH:mm:ss').add(1, 'd');
+		} else {
+			afterDate = moment(forecast_update_times[i+1], 'HH:mm:ss');	
+		}
 		
 		logger.debug('index', i ,'between', beforeDate.format(), 'and', afterDate.format());
 		
