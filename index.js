@@ -221,7 +221,7 @@ function refresh(triggerNextUpdate) {
 		.finally(function() {
 			logger.info('completed in', getTimespan());
 			if(!nextUpdateTimeoutSet && triggerNextUpdate) {
-				logger.warn('next update is not set, forcing it in 11s');
+				logger.warn('next update is not set, forcing it in 11m');
 				setTimeout(function() {
 					refresh(true);
 				}, 660000);
