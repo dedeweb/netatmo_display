@@ -110,7 +110,33 @@ bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
 };
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 var startTime = moment();
-logger.info('script launch');
+
+logger.info('init fonts and bitmaps');
+
+var bitmap = new bmp_lib.BMPBitmap(640, 384);
+var palette = bitmap.palette;
+
+var font_18_white = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+font_18_white.setSize(18);
+font_18_white.setColor(palette.indexOf(0xffffff));
+
+var font_18_black = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+font_18_black.setSize(18);
+font_18_black.setColor(palette.indexOf(0x000000));
+
+var font_18_red = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+font_18_red.setSize(18);
+font_18_red.setColor(palette.indexOf(0xff0000));
+
+var font_55_black = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+font_55_black.setSize(55);
+font_55_black.setColor(palette.indexOf(0x000000));
+
+var font_36_black = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+font_36_black.setSize(36);
+font_36_black.setColor(palette.indexOf(0x000000));
+
+logger.info('script launch after',  getTimespan());
 
 //launch process
 refresh(true);
@@ -118,7 +144,7 @@ refresh(true);
 
 function refresh(triggerNextUpdate) {
 	if (refreshing && !triggerNextUpdate) {
-		logger.warn('already refreshing, exit immediatly');
+		logger.warn('already refreshing, exit immediately');
 		return;
 	}
 	logger.info('------------------------------------------------------');
@@ -285,8 +311,7 @@ function getTimespan() {
 
 function drawImage(data_netatmo, data_darksky) {
 	goBusy();
-	let bitmap = new bmp_lib.BMPBitmap(640, 384);
-	let palette = bitmap.palette;
+	
 	
 	if (!data_darksky && fs.existsSync(outputFile)) {
 		logger.info('partial refresh : refresh only netatmo data. ')
@@ -303,26 +328,25 @@ function drawImage(data_netatmo, data_darksky) {
 	
 	
 	
-	drawOutline(bitmap, palette);
+	drawOutline();
 
-	drawFirstCol(bitmap, palette,
-		data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max);
-	drawCol(bitmap, palette, 160,
+	drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max);
+	drawCol(160,
 		data_netatmo.salon.temp, data_netatmo.salon.hum, data_netatmo.salon.co2, data_netatmo.salon.temp_min, data_netatmo.salon.temp_max, data_netatmo.salon.noise);
-	drawCol(bitmap, palette, 320,
+	drawCol(320,
 		data_netatmo.chambre.temp, data_netatmo.chambre.hum, data_netatmo.chambre.co2, data_netatmo.chambre.temp_min, data_netatmo.chambre.temp_max);
-	drawCol(bitmap, palette, 480,
+	drawCol(480,
 		data_netatmo.bureau.temp, data_netatmo.bureau.hum, data_netatmo.bureau.co2, data_netatmo.bureau.temp_min, data_netatmo.bureau.temp_max);
 
-	drawDate(bitmap, palette, data_netatmo.time);
+	drawDate(data_netatmo.time);
 
 	if (data_darksky) {
 		bitmap.drawFilledRect(0, 183, 640, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
 		bitmap.drawFilledRect(0, 203, 640, 1, palette.indexOf(0xff0000), null);
-		drawEphemerides(bitmap, palette, data_darksky.daily.data[0].sunriseTime, data_darksky.daily.data[0].sunsetTime);
+		drawEphemerides(data_darksky.daily.data[0].sunriseTime, data_darksky.daily.data[0].sunsetTime);
 		let xInc = 6;
 		for (let i = 0; i < 7; i++) {
-			xInc += drawForecastDay(bitmap, palette, xInc, 183, data_darksky.daily.data[i]);
+			xInc += drawForecastDay(xInc, 183, data_darksky.daily.data[i]);
 		}
 	}
 	
@@ -418,64 +442,47 @@ function shouldUpdateForecast() {
 	return false;
 }
 
-function drawEphemerides(bitmap, palette, sunrise, sunset) {
+function drawEphemerides(sunrise, sunset) {
 	let sunriseTxt =  moment('' + sunrise, 'X').format('HH:mm');
 	let sunsetTxt =  moment('' + sunset, 'X').format('HH:mm');
-	let fontBlack = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
 	let sunriseIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));
 	let sunsetIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunset.bmp'));
-	fontBlack.setSize(18);
-	fontBlack.setColor(palette.indexOf(0x000000));
-	
+
 	bitmap.drawBitmap(sunriseIcon, 28, 123);
-	bitmap.drawText(fontBlack, sunriseTxt,20, 150);
+	bitmap.drawText(font_18_black, sunriseTxt,20, 150);
 	bitmap.drawBitmap(sunsetIcon, 108, 123);
-	bitmap.drawText(fontBlack, sunsetTxt,100, 150);
-	
+	bitmap.drawText(font_18_black, sunsetTxt,100, 150);
 }
 
-function drawForecastDay(bitmap, palette, x, y, data) {
+function drawForecastDay(x, y, data) {
 	let momentObj = moment('' + data.time, 'X');
 	let day = momentObj.format('ddd DD').toUpperCase();
 	let isSunday = momentObj.format('d') === '0';
-	let fontHeader = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	fontHeader.setSize(18);
-	fontHeader.setColor(palette.indexOf(0xffffff));
-	let fontBlack = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	fontBlack.setSize(18);
-	fontBlack.setColor(palette.indexOf(0x000000));
-	let fontRed = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	fontRed.setSize(18);
-	fontRed.setColor(palette.indexOf(0xff0000));
 
 	let colWidth = 90;
 
 	if (isSunday) {
 		bitmap.drawFilledRect(x + 94, y, 2, 20, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
 		//bitmap.drawFilledRect(x + 90, y + 20, 3, 200, palette.indexOf(0xff0000), palette.indexOf(0xff0000));
-		drawDotLine(bitmap, palette, x + 91, y + 20, 200);
+		drawDotLine( x + 91, y + 20, 200);
 		bitmap.drawFilledRect(x + 93, y + 20, 3, 200, palette.indexOf(0x000000), palette.indexOf(0x000000));
 		colWidth = 95;
 	} else {
 		bitmap.drawFilledRect(x + 89, y, 2, 20, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
-		drawDotLine(bitmap, palette, x + 89, y + 20, 200);
+		drawDotLine(x + 89, y + 20, 200);
 	}
-
 
 	let icon_weather = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/' + getDarkSkyIconFromCode(data.icon) + '.bmp'));
 	bitmap.drawBitmap(icon_weather, x + 12, y + 21);
-	bitmap.drawText(fontHeader, day, x + 15, y + 2);
-
-
-
+	bitmap.drawText(font_18_white, day, x + 15, y + 2);
 
 	let arrow_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
 	bitmap.drawBitmap(arrow_down_black, x + 4, y + 87);
-	bitmap.drawText(fontBlack, '' + Math.round(data.temperatureLow) + ' °', x + 18, y + 85);
+	bitmap.drawText(font_18_black, '' + Math.round(data.temperatureLow) + ' °', x + 18, y + 85);
 
 	let arrow_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
 	bitmap.drawBitmap(arrow_top_red, x + 47, y + 87);
-	bitmap.drawText(fontRed, '' + Math.round(data.temperatureHigh) + ' °', x + 61, y + 85);
+	bitmap.drawText(font_18_red, '' + Math.round(data.temperatureHigh) + ' °', x + 61, y + 85);
 
 	/*let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
 	bitmap.drawBitmap(wind_icon,x+5,y+100);*/
@@ -484,74 +491,52 @@ function drawForecastDay(bitmap, palette, x, y, data) {
 	let kphIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/kph.bmp'));
 	bitmap.drawBitmap(kphIcon, x + 60, y + 110);
 	//bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
-	bitmap.drawTextRight(fontBlack, Math.round(data.windSpeed) + '-' + Math.round(data.windGust), x + 55, y + 110);
+	bitmap.drawTextRight(font_18_black, Math.round(data.windSpeed) + '-' + Math.round(data.windGust), x + 55, y + 110);
 
 	let rain_icon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop.bmp'));
 	bitmap.drawBitmap(rain_icon, x + 1, y + 135);
-	bitmap.drawText(fontBlack, Math.round(data.precipProbability * 100) + '%', x + 20, y + 135);
+	bitmap.drawText(font_18_black, Math.round(data.precipProbability * 100) + '%', x + 20, y + 135);
 	let rainVal = Math.round(data.precipIntensity * 24);
 	if (rainVal > 0) {
-		bitmap.drawText(fontBlack, rainVal + ' mm', x + 20, y + 158);
+		bitmap.drawText(font_18_black, rainVal + ' mm', x + 20, y + 158);
 	}
 	let snowVal = Math.round(data.precipAccumulation);
 	if (snowVal > 0) {
 		let snow_icon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/snow.bmp'));
 		bitmap.drawBitmap(snow_icon, x + 4, y + 180);
-		bitmap.drawText(fontBlack, '' + snowVal + ' cm', x + 28, y + 180);
+		bitmap.drawText(font_18_black, '' + snowVal + ' cm', x + 28, y + 180);
 	}
 
 	return colWidth;
 }
 
-function drawDate(bitmap, palette, date) {
-	//moment.locale('fr');
-	/*moment.locale('fr', {
-	    monthsShort : 'janv._févr._mars_avr._mai_juin_juil._août_sept._oct._nov._déc.'.split('_'),
-	    weekdays : 'dimanche_lundi_mardi_mercredi_jeudi_vendredi_samedi'.split('_'),});*/
+function drawDate(date) {
 	let dateStr = 'mesuré le ' + moment('' + date, 'X').format('DD MMM à HH:mm');
-	let font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	font.setSize(18);
-	font.setColor(palette.indexOf(0x000000));
-	bitmap.drawTextRight(font, dateStr, 635, 165);
+	bitmap.drawTextRight(font_18_black, dateStr, 635, 165);
 }
 
-function drawOutline(bitmap, palette) {
+function drawOutline() {
 	bitmap.drawFilledRect(0, 0, 159, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
 	bitmap.drawFilledRect(161, 0, 158, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
 	bitmap.drawFilledRect(321, 0, 158, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
 	bitmap.drawFilledRect(481, 0, 159, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
 	bitmap.drawFilledRect(0, 20, 640, 1, palette.indexOf(0xff0000), null);
-	drawHorizDotLine(bitmap, palette, 160, 65, 480);
-	drawHorizDotLine(bitmap, palette, 0, 105, 160);
+	drawHorizDotLine(160, 65, 480);
+	drawHorizDotLine(0, 105, 160);
 	//bitmap.drawFilledRect(160, 65, 480, 1, palette.indexOf(0xff0000), null);
-	drawDotLine(bitmap, palette, 159, 20, 163);
-	drawDotLine(bitmap, palette, 319, 20, 163);
-	drawDotLine(bitmap, palette, 479, 20, 140);
+	drawDotLine(159, 20, 163);
+	drawDotLine(319, 20, 163);
+	drawDotLine(479, 20, 140);
 
-
-	let font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	font.setSize(18);
-	font.setColor(palette.indexOf(0xffffff));
-	bitmap.drawText(font, "EXTÉRIEUR", 15, 1);
-	bitmap.drawText(font, "SÉJOUR", 175, 1);
-	bitmap.drawText(font, "CHAMBRE", 335, 1);
-	bitmap.drawText(font, "BUREAU", 495, 1);
+	bitmap.drawText(font_18_white, "EXTÉRIEUR", 15, 1);
+	bitmap.drawText(font_18_white, "SÉJOUR", 175, 1);
+	bitmap.drawText(font_18_white, "CHAMBRE", 335, 1);
+	bitmap.drawText(font_18_white, "BUREAU", 495, 1);
 }
 
-function drawFirstCol(bitmap, palette, temp, temp_trend, temp_min, temp_max) {
-	let fontBig = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	fontBig.setSize(55);
-	fontBig.setColor(palette.indexOf(0x000000));
+function drawFirstCol(temp, temp_trend, temp_min, temp_max) {
 	
-	let fontSmallBlack =  new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	fontSmallBlack.setSize(18);
-	fontSmallBlack.setColor(palette.indexOf(0x000000));
-	
-	let fontSmallRed =  new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	fontSmallRed.setSize(18);
-	fontSmallRed.setColor(palette.indexOf(0xff0000));
-	
-	bitmap.drawTextRight(fontBig, '' + temp, 115, 25);
+	bitmap.drawTextRight(font_55_black, '' + temp, 115, 25);
 	
 	let degIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg.bmp'));
 	bitmap.drawBitmap(degIcon,123, 35);
@@ -570,37 +555,27 @@ function drawFirstCol(bitmap, palette, temp, temp_trend, temp_min, temp_max) {
 
 	let array_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
 	bitmap.drawBitmap(array_down_black, 20, 82);
-	bitmap.drawText(fontSmallBlack, '' + temp_min + ' °', 35, 82);
+	bitmap.drawText(font_18_black, '' + temp_min + ' °', 35, 82);
 
 	let array_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
 	bitmap.drawBitmap(array_top_red, 90, 86);
-	bitmap.drawText(fontSmallRed, '' + temp_max + ' °', 105, 82);
+	bitmap.drawText(font_18_red, '' + temp_max + ' °', 105, 82);
 
 }
 
-function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) {
-	let font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	font.setSize(36);
-	font.setColor(palette.indexOf(0x000000));
-	let fontSmall = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	fontSmall.setSize(18);
-	fontSmall.setColor(palette.indexOf(0x000000));
-	let fontSmallRed = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	fontSmallRed.setSize(18);
-	fontSmallRed.setColor(palette.indexOf(0xff0000));
-
+function drawCol( x, temp, hum, co2, temp_min, temp_max, noise) {
 
 	//temp
-	bitmap.drawTextRight(font, '' + temp, x + 70, 25);
-	bitmap.drawText(fontSmall, "°", x + 75, 27);
+	bitmap.drawTextRight(font_36_black, '' + temp, x + 70, 25);
+	bitmap.drawText(font_18_black, "°", x + 75, 27);
 
 	//temp minmax
 	let array_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
 	bitmap.drawBitmap(array_top_red, x + 95, 28);
-	bitmap.drawText(fontSmallRed, '' + temp_max + ' °', x + 112, 26);
+	bitmap.drawText(font_18_red, '' + temp_max + ' °', x + 112, 26);
 	let array_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
 	bitmap.drawBitmap(array_down_black, x + 95, 45);
-	bitmap.drawText(fontSmall, '' + temp_min + ' °', x + 112, 43);
+	bitmap.drawText(font_18_black, '' + temp_min + ' °', x + 112, 43);
 
 
 	//hum = 70;
@@ -608,23 +583,23 @@ function drawCol(bitmap, palette, x, temp, hum, co2, temp_min, temp_max, noise) 
 	if ( isHumWarning(hum)) {
 		bitmap.drawFilledRect(x + 1, 66, 158, 43, null, palette.indexOf(0xff0000));
 	}
-	bitmap.drawTextRight(font, '' + hum, x + 90, 70);
-	bitmap.drawText(fontSmall, "%", x + 95, 72);
+	bitmap.drawTextRight(font_36_black, '' + hum, x + 90, 70);
+	bitmap.drawText(font_18_black, "%", x + 95, 72);
 	//co2 = 1200;
 	//co2
 	if (isCO2Warning(co2)) {
 		bitmap.drawFilledRect(x + 1, 107, 158, 38, null, palette.indexOf(0xff0000));
 	}
-	bitmap.drawTextRight(font, '' + co2, x + 90, 108);
-	bitmap.drawText(fontSmall, "ppm", x + 95, 110);
+	bitmap.drawTextRight(font_36_black, '' + co2, x + 90, 108);
+	bitmap.drawText(font_18_black, "ppm", x + 95, 110);
 
 	//noise
 	if (noise) {
 		if (isNoiseWarning(noise_avg_curr)) {
 			bitmap.drawFilledRect(x + 1, 143, 158, 40, null, palette.indexOf(0xff0000));
 		}
-		bitmap.drawTextRight(font, '' + noise, x + 90, 145);
-		bitmap.drawText(fontSmall, "dB", x + 95, 147);
+		bitmap.drawTextRight(font_36_black, '' + noise, x + 90, 145);
+		bitmap.drawText(font_18_black, "dB", x + 95, 147);
 	}
 }
 
@@ -754,7 +729,7 @@ function shouldUpdateNoise(lastVal, newVal) {
 	}
 }
 
-function drawDotLine(bitmap, palette, left, top, height) {
+function drawDotLine(left, top, height) {
 	var pixon = true;
 	for (var x = left; x < left + 2; x++) {
 
@@ -770,7 +745,7 @@ function drawDotLine(bitmap, palette, left, top, height) {
 	}
 }
 
-function drawHorizDotLine(bitmap, palette, left, top, width) {
+function drawHorizDotLine(left, top, width) {
 	var pixon = true;
 
 	for (var x = left; x < left + width; x++) {
