@@ -294,7 +294,7 @@ function drawImage(data_netatmo, data_darksky) {
 		bitmap = bmp_lib.BMPBitmap.fromFile(outputFile);
 		// and erase netatmo part, which will be freshed. 
 		bitmap.drawFilledRect(0, 0, 640, 105, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
-		bitmap.drawFilledRect(160, 105, 640, 47, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
+		bitmap.drawFilledRect(160, 105, 480, 77, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
 	} else {
 		//redraw all. 
 		logger.info('full refresh');
@@ -306,7 +306,7 @@ function drawImage(data_netatmo, data_darksky) {
 	drawOutline(bitmap, palette);
 
 	drawFirstCol(bitmap, palette,
-		data_netatmo.ext.temp, data_netatmo.ext.hum, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max);
+		data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max);
 	drawCol(bitmap, palette, 160,
 		data_netatmo.salon.temp, data_netatmo.salon.hum, data_netatmo.salon.co2, data_netatmo.salon.temp_min, data_netatmo.salon.temp_max, data_netatmo.salon.noise);
 	drawCol(bitmap, palette, 320,
@@ -538,36 +538,43 @@ function drawOutline(bitmap, palette) {
 	bitmap.drawText(font, "BUREAU", 495, 1);
 }
 
-function drawFirstCol(bitmap, palette, temp, hum, temp_min, temp_max) {
-	let font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	font.setSize(55);
-	font.setColor(palette.indexOf(0x000000));
-	bitmap.drawTextRight(font, '' + temp, 105, 25);
+function drawFirstCol(bitmap, palette, temp, temp_trend, temp_min, temp_max) {
+	let fontBig = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	fontBig.setSize(55);
+	fontBig.setColor(palette.indexOf(0x000000));
 	
-	font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	font.setSize(18);
-	font.setColor(palette.indexOf(0x000000));
-	bitmap.drawTextRight(font, '' + hum, 148, 22);
+	let fontSmallBlack =  new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	fontSmallBlack.setSize(18);
+	fontSmallBlack.setColor(palette.indexOf(0x000000));
 	
-	let percentIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/percent.bmp'));
-	bitmap.drawBitmap(percentIcon, 152, 25);
+	let fontSmallRed =  new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	fontSmallRed.setSize(18);
+	fontSmallRed.setColor(palette.indexOf(0xff0000));
 	
-	font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	font.setSize(18);
-	font.setColor(palette.indexOf(0x000000));
-
-	bitmap.drawText(font, "°", 110, 30);
-	//bitmap.drawText(font, "%", 105, 105);
+	bitmap.drawTextRight(fontBig, '' + temp, 115, 25);
+	
+	let degIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg.bmp'));
+	bitmap.drawBitmap(degIcon,123, 35);
+	
+	let trendIcon = null;
+	if (temp_trend === 'up') {
+		trendIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
+	} else if (temp_trend === 'down') {
+		trendIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
+	} else if (temp_trend === 'stable') {
+		trendIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_right_black.bmp'));
+	}
+	
+	bitmap.drawBitmap(trendIcon,125, 55);
 
 
 	let array_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
 	bitmap.drawBitmap(array_down_black, 20, 82);
-	bitmap.drawText(font, '' + temp_min + ' °', 35, 82);
+	bitmap.drawText(fontSmallBlack, '' + temp_min + ' °', 35, 82);
 
 	let array_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
 	bitmap.drawBitmap(array_top_red, 90, 86);
-	font.setColor(palette.indexOf(0xff0000));
-	bitmap.drawText(font, '' + temp_max + ' °', 105, 82);
+	bitmap.drawText(fontSmallRed, '' + temp_max + ' °', 105, 82);
 
 }
 
