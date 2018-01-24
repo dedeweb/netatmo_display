@@ -336,6 +336,7 @@ function getDarkSkyIconFromCode(code) {
 	switch (code) {
 		case 'clear-day':
 		case 'clear-night':
+		case 'partly-cloudy-night':
 			return 'clear';
 		case 'rain':
 			return 'rain';
@@ -350,7 +351,6 @@ function getDarkSkyIconFromCode(code) {
 		case 'cloudy':
 			return 'cloudy';
 		case 'partly-cloudy-day':
-		case 'partly-cloudy-night':
 			return 'partlysunny';
 		default:
 			return 'unknown';
