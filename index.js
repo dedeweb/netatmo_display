@@ -192,8 +192,8 @@ function refresh(triggerNextUpdate) {
 						logger.info('darksky data received after', getTimespan());
 						last_darksky_update = moment();
 						drawImage(data_netatmo, JSON.parse(data_darksky));
-					}).catch(function() {
-						logger.error('darksky server error ! ');
+					}).catch(function(e) {
+						logger.error('darksky server error ! ',e);
 						drawImage(data_netatmo, null);
 					});	
 				} else {
@@ -293,7 +293,8 @@ function drawImage(data_netatmo, data_darksky) {
 		//start from previous bmp
 		bitmap = bmp_lib.BMPBitmap.fromFile(outputFile);
 		// and erase netatmo part, which will be freshed. 
-		bitmap.drawFilledRect(0, 0, 640, 182, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
+		bitmap.drawFilledRect(0, 0, 640, 105, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
+		bitmap.drawFilledRect(160, 105, 640, 47, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
 	} else {
 		//redraw all. 
 		logger.info('full refresh');
@@ -318,6 +319,7 @@ function drawImage(data_netatmo, data_darksky) {
 	if (data_darksky) {
 		bitmap.drawFilledRect(0, 183, 640, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
 		bitmap.drawFilledRect(0, 203, 640, 1, palette.indexOf(0xff0000), null);
+		drawEphemerides(bitmap, palette, data_darksky.daily.data[0].sunriseTime, data_darksky.daily.data[0].sunsetTime);
 		let xInc = 6;
 		for (let i = 0; i < 7; i++) {
 			xInc += drawForecastDay(bitmap, palette, xInc, 183, data_darksky.daily.data[i]);
@@ -416,6 +418,22 @@ function shouldUpdateForecast() {
 	return false;
 }
 
+function drawEphemerides(bitmap, palette, sunrise, sunset) {
+	let sunriseTxt =  moment('' + sunrise, 'X').format('HH:mm');
+	let sunsetTxt =  moment('' + sunset, 'X').format('HH:mm');
+	let fontBlack = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	let sunriseIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));
+	let sunsetIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunset.bmp'));
+	fontBlack.setSize(18);
+	fontBlack.setColor(palette.indexOf(0x000000));
+	
+	bitmap.drawBitmap(sunriseIcon, 28, 123);
+	bitmap.drawText(fontBlack, sunriseTxt,20, 150);
+	bitmap.drawBitmap(sunsetIcon, 108, 123);
+	bitmap.drawText(fontBlack, sunsetTxt,100, 150);
+	
+}
+
 function drawForecastDay(bitmap, palette, x, y, data) {
 	let momentObj = moment('' + data.time, 'X');
 	let day = momentObj.format('ddd DD').toUpperCase();
@@ -504,7 +522,7 @@ function drawOutline(bitmap, palette) {
 	bitmap.drawFilledRect(481, 0, 159, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
 	bitmap.drawFilledRect(0, 20, 640, 1, palette.indexOf(0xff0000), null);
 	drawHorizDotLine(bitmap, palette, 160, 65, 480);
-	drawHorizDotLine(bitmap, palette, 0, 135, 160);
+	drawHorizDotLine(bitmap, palette, 0, 105, 160);
 	//bitmap.drawFilledRect(160, 65, 480, 1, palette.indexOf(0xff0000), null);
 	drawDotLine(bitmap, palette, 159, 20, 163);
 	drawDotLine(bitmap, palette, 319, 20, 163);
@@ -524,19 +542,22 @@ function drawFirstCol(bitmap, palette, temp, hum, temp_min, temp_max) {
 	let font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
 	font.setSize(55);
 	font.setColor(palette.indexOf(0x000000));
-	bitmap.drawTextRight(font, '' + temp, 120, 25);
+	bitmap.drawTextRight(font, '' + temp, 105, 25);
 	
 	font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	font.setSize(36);
+	font.setSize(18);
 	font.setColor(palette.indexOf(0x000000));
-	bitmap.drawTextRight(font, '' + hum, 100, 100);
-
+	bitmap.drawTextRight(font, '' + hum, 148, 22);
+	
+	let percentIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/percent.bmp'));
+	bitmap.drawBitmap(percentIcon, 152, 25);
+	
 	font = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
 	font.setSize(18);
 	font.setColor(palette.indexOf(0x000000));
 
-	bitmap.drawText(font, "°", 125, 30);
-	bitmap.drawText(font, "%", 105, 105);
+	bitmap.drawText(font, "°", 110, 30);
+	//bitmap.drawText(font, "%", 105, 105);
 
 
 	let array_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
