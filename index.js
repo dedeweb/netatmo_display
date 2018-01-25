@@ -12,7 +12,6 @@ const Gpio = require('onoff').Gpio;
 
 
 const cmdTimeout = 70000;
-
 const outputFile = path.join(__dirname,'out.bmp');
 
 //warning values
@@ -33,19 +32,11 @@ const morning_hour = 6; //trigger on ext. temp only after this hour.
 //forecast update times
 const forecast_update_times = ['06:00:00', '18:30:00']
 
-//flash interval
+//led flash interval
 const led_flash_interval = 1000;
 
 
-var refreshing = false;
-var previous_data = null;
-var last_darksky_update = null;
-var noise_values = [];
-var noise_avg_prev = 0;
-var noise_avg_curr = 0;
-
-
-let logger = new(winston.Logger)({
+var logger = new(winston.Logger)({
 	transports: [
 		new winston.transports.Console({
 			level: 'debug',
@@ -71,44 +62,21 @@ let logger = new(winston.Logger)({
 	]
 });
 
-let led = {};
+
+var refreshing = false;
+var previous_data = null;
+var last_darksky_update = null;
+var noise_values = [];
+var noise_avg_prev = 0;
+var noise_avg_curr = 0;
+var led = {};
+var res = {};
 
 moment.locale('fr');
 
-bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
-	let fontBitmap = font.getBitmap();
-	let lineHeight = font.getLineHeight();
-	let fontDetails = font.getDetails();
-	let characterInfoMap = fontDetails.chars;
-	let kernings = fontDetails.kernings;
-	let transparentColor = font.getTransparentColor();
-	let lines = text.split(/\r?\n|\r/);
-	let lineX = x;
-	for (let line of lines) {
-		let lastCharacter = null;
-		for (let i = line.length - 1; i >= 0; i--) {
-			let character = line[i];
-			let characterInfo = characterInfoMap[character];
-			if (!characterInfo) {
-				continue;
-			}
-			let kerning = kernings[character];
-			if (kerning && lastCharacter) {
-				kerning = kerning[lastCharacter];
-				if (kerning) {
-					x -= kerning.amount;
-				}
-			}
-			this.drawBitmap(fontBitmap, x + characterInfo.xoffset - characterInfo.width, y + characterInfo.yoffset,
-				transparentColor, characterInfo.x, characterInfo.y, characterInfo.width,
-				characterInfo.height);
-			x -= characterInfo.xadvance;
-		}
-		x = lineX;
-		y += lineHeight;
-	}
-};
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+addDrawTextRightFunction();
+
 var startTime = moment();
 
 logger.info('init fonts and bitmaps');
@@ -116,25 +84,7 @@ logger.info('init fonts and bitmaps');
 var bitmap = new bmp_lib.BMPBitmap(640, 384);
 var palette = bitmap.palette;
 
-var font_18_white = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-font_18_white.setSize(18);
-font_18_white.setColor(palette.indexOf(0xffffff));
-
-var font_18_black = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-font_18_black.setSize(18);
-font_18_black.setColor(palette.indexOf(0x000000));
-
-var font_18_red = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-font_18_red.setSize(18);
-font_18_red.setColor(palette.indexOf(0xff0000));
-
-var font_55_black = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-font_55_black.setSize(55);
-font_55_black.setColor(palette.indexOf(0x000000));
-
-var font_36_black = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-font_36_black.setSize(36);
-font_36_black.setColor(palette.indexOf(0x000000));
+loadRes();
 
 logger.info('script launch after',  getTimespan());
 
@@ -445,13 +395,11 @@ function shouldUpdateForecast() {
 function drawEphemerides(sunrise, sunset) {
 	let sunriseTxt =  moment('' + sunrise, 'X').format('HH:mm');
 	let sunsetTxt =  moment('' + sunset, 'X').format('HH:mm');
-	let sunriseIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));
-	let sunsetIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunset.bmp'));
 
-	bitmap.drawBitmap(sunriseIcon, 28, 123);
-	bitmap.drawText(font_18_black, sunriseTxt,20, 150);
-	bitmap.drawBitmap(sunsetIcon, 108, 123);
-	bitmap.drawText(font_18_black, sunsetTxt,100, 150);
+	bitmap.drawBitmap(res.icons.sunrise, 28, 123);
+	bitmap.drawText(res.font.black_18, sunriseTxt,20, 150);
+	bitmap.drawBitmap(res.icons.sunset, 108, 123);
+	bitmap.drawText(res.font.black_18, sunsetTxt,100, 150);
 }
 
 function drawForecastDay(x, y, data) {
@@ -472,39 +420,32 @@ function drawForecastDay(x, y, data) {
 		drawDotLine(x + 89, y + 20, 200);
 	}
 
-	let icon_weather = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/' + getDarkSkyIconFromCode(data.icon) + '.bmp'));
-	bitmap.drawBitmap(icon_weather, x + 12, y + 21);
-	bitmap.drawText(font_18_white, day, x + 15, y + 2);
+	bitmap.drawBitmap(res.weather_icons[getDarkSkyIconFromCode(data.icon)], x + 12, y + 21);
+	bitmap.drawText(res.font.white_18, day, x + 15, y + 2);
 
-	let arrow_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
-	bitmap.drawBitmap(arrow_down_black, x + 4, y + 87);
-	bitmap.drawText(font_18_black, '' + Math.round(data.temperatureLow) + ' °', x + 18, y + 85);
+	bitmap.drawBitmap(res.icons.arrow_down_black, x + 4, y + 87);
+	bitmap.drawText(res.font.black_18, '' + Math.round(data.temperatureLow) + ' °', x + 18, y + 85);
 
-	let arrow_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
-	bitmap.drawBitmap(arrow_top_red, x + 47, y + 87);
-	bitmap.drawText(font_18_red, '' + Math.round(data.temperatureHigh) + ' °', x + 61, y + 85);
+	bitmap.drawBitmap(res.icons.arrow_top_red, x + 47, y + 87);
+	bitmap.drawText(res.font.red_18, '' + Math.round(data.temperatureHigh) + ' °', x + 61, y + 85);
 
 	/*let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
 	bitmap.drawBitmap(wind_icon,x+5,y+100);*/
-	let windDirIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/' + bearingToDir(data.windBearing) + '.bmp'));
-	bitmap.drawBitmap(windDirIcon, x + 5, y + 110);
-	let kphIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/kph.bmp'));
-	bitmap.drawBitmap(kphIcon, x + 60, y + 110);
+	bitmap.drawBitmap(res.windir_icons[bearingToDir(data.windBearing)], x + 5, y + 110);
+	bitmap.drawBitmap(res.icons.kph, x + 60, y + 110);
 	//bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
-	bitmap.drawTextRight(font_18_black, Math.round(data.windSpeed) + '-' + Math.round(data.windGust), x + 55, y + 110);
+	bitmap.drawTextRight(res.font.black_18, Math.round(data.windSpeed) + '-' + Math.round(data.windGust), x + 55, y + 110);
 
-	let rain_icon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop.bmp'));
-	bitmap.drawBitmap(rain_icon, x + 1, y + 135);
-	bitmap.drawText(font_18_black, Math.round(data.precipProbability * 100) + '%', x + 20, y + 135);
+	bitmap.drawBitmap(res.icons.rain, x + 1, y + 135);
+	bitmap.drawText(res.font.black_18, Math.round(data.precipProbability * 100) + '%', x + 20, y + 135);
 	let rainVal = Math.round(data.precipIntensity * 24);
 	if (rainVal > 0) {
-		bitmap.drawText(font_18_black, rainVal + ' mm', x + 20, y + 158);
+		bitmap.drawText(res.font.black_18, rainVal + ' mm', x + 20, y + 158);
 	}
 	let snowVal = Math.round(data.precipAccumulation);
 	if (snowVal > 0) {
-		let snow_icon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/snow.bmp'));
-		bitmap.drawBitmap(snow_icon, x + 4, y + 180);
-		bitmap.drawText(font_18_black, '' + snowVal + ' cm', x + 28, y + 180);
+		bitmap.drawBitmap(res.icons.snow, x + 4, y + 180);
+		bitmap.drawText(res.font.black_18, '' + snowVal + ' cm', x + 28, y + 180);
 	}
 
 	return colWidth;
@@ -512,7 +453,7 @@ function drawForecastDay(x, y, data) {
 
 function drawDate(date) {
 	let dateStr = 'mesuré le ' + moment('' + date, 'X').format('DD MMM à HH:mm');
-	bitmap.drawTextRight(font_18_black, dateStr, 635, 165);
+	bitmap.drawTextRight(res.font.black_18, dateStr, 635, 165);
 }
 
 function drawOutline() {
@@ -528,54 +469,47 @@ function drawOutline() {
 	drawDotLine(319, 20, 163);
 	drawDotLine(479, 20, 140);
 
-	bitmap.drawText(font_18_white, "EXTÉRIEUR", 15, 1);
-	bitmap.drawText(font_18_white, "SÉJOUR", 175, 1);
-	bitmap.drawText(font_18_white, "CHAMBRE", 335, 1);
-	bitmap.drawText(font_18_white, "BUREAU", 495, 1);
+	bitmap.drawText(res.font.white_18, "EXTÉRIEUR", 15, 1);
+	bitmap.drawText(res.font.white_18, "SÉJOUR", 175, 1);
+	bitmap.drawText(res.font.white_18, "CHAMBRE", 335, 1);
+	bitmap.drawText(res.font.white_18, "BUREAU", 495, 1);
 }
 
 function drawFirstCol(temp, temp_trend, temp_min, temp_max) {
 	
-	bitmap.drawTextRight(font_55_black, '' + temp, 115, 25);
-	
-	let degIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg.bmp'));
-	bitmap.drawBitmap(degIcon,123, 35);
+	bitmap.drawTextRight(res.font.black_55, '' + temp, 115, 25);
+	bitmap.drawBitmap(res.icons.deg,123, 35);
 	
 	let trendIcon = null;
 	if (temp_trend === 'up') {
-		trendIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
+		trendIcon = res.icons.arrow_top_red;
 	} else if (temp_trend === 'down') {
-		trendIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
+		trendIcon = res.icons.arrow_down_black
 	} else if (temp_trend === 'stable') {
-		trendIcon = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_right_black.bmp'));
+		trendIcon = res.icons.arrow_right_black;
 	}
 	
 	bitmap.drawBitmap(trendIcon,125, 55);
+	
+	bitmap.drawBitmap(res.icons.arrow_down_black, 20, 82);
+	bitmap.drawText(res.font.black_18, '' + temp_min + ' °', 35, 82);
 
-
-	let array_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
-	bitmap.drawBitmap(array_down_black, 20, 82);
-	bitmap.drawText(font_18_black, '' + temp_min + ' °', 35, 82);
-
-	let array_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
-	bitmap.drawBitmap(array_top_red, 90, 86);
-	bitmap.drawText(font_18_red, '' + temp_max + ' °', 105, 82);
+	bitmap.drawBitmap(res.icons.arrow_top_red, 90, 86);
+	bitmap.drawText(res.font.red_18, '' + temp_max + ' °', 105, 82);
 
 }
 
 function drawCol( x, temp, hum, co2, temp_min, temp_max, noise) {
 
 	//temp
-	bitmap.drawTextRight(font_36_black, '' + temp, x + 70, 25);
-	bitmap.drawText(font_18_black, "°", x + 75, 27);
+	bitmap.drawTextRight(res.font.black_36, '' + temp, x + 70, 25);
+	bitmap.drawText(res.font.black_18, "°", x + 75, 27);
 
 	//temp minmax
-	let array_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_top_red.bmp'));
-	bitmap.drawBitmap(array_top_red, x + 95, 28);
-	bitmap.drawText(font_18_red, '' + temp_max + ' °', x + 112, 26);
-	let array_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/array_down_black.bmp'));
-	bitmap.drawBitmap(array_down_black, x + 95, 45);
-	bitmap.drawText(font_18_black, '' + temp_min + ' °', x + 112, 43);
+	bitmap.drawBitmap(res.icons.arrow_top_red, x + 95, 28);
+	bitmap.drawText(res.font.red_18, '' + temp_max + ' °', x + 112, 26);
+	bitmap.drawBitmap(res.icons.arrow_down_black, x + 95, 45);
+	bitmap.drawText(res.font.black_18, '' + temp_min + ' °', x + 112, 43);
 
 
 	//hum = 70;
@@ -583,23 +517,23 @@ function drawCol( x, temp, hum, co2, temp_min, temp_max, noise) {
 	if ( isHumWarning(hum)) {
 		bitmap.drawFilledRect(x + 1, 66, 158, 43, null, palette.indexOf(0xff0000));
 	}
-	bitmap.drawTextRight(font_36_black, '' + hum, x + 90, 70);
-	bitmap.drawText(font_18_black, "%", x + 95, 72);
+	bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 70);
+	bitmap.drawText(res.font.black_18, "%", x + 95, 72);
 	//co2 = 1200;
 	//co2
 	if (isCO2Warning(co2)) {
 		bitmap.drawFilledRect(x + 1, 107, 158, 38, null, palette.indexOf(0xff0000));
 	}
-	bitmap.drawTextRight(font_36_black, '' + co2, x + 90, 108);
-	bitmap.drawText(font_18_black, "ppm", x + 95, 110);
+	bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 108);
+	bitmap.drawText(res.font.black_18, "ppm", x + 95, 110);
 
 	//noise
 	if (noise) {
 		if (isNoiseWarning(noise_avg_curr)) {
 			bitmap.drawFilledRect(x + 1, 143, 158, 40, null, palette.indexOf(0xff0000));
 		}
-		bitmap.drawTextRight(font_36_black, '' + noise, x + 90, 145);
-		bitmap.drawText(font_18_black, "dB", x + 95, 147);
+		bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 145);
+		bitmap.drawText(res.font.black_18, "dB", x + 95, 147);
 	}
 }
 
@@ -908,4 +842,97 @@ function getDataFromNetatmo() {
 			}
 		}
 	});
+}
+
+function addDrawTextRightFunction() {
+	bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
+		let fontBitmap = font.getBitmap();
+		let lineHeight = font.getLineHeight();
+		let fontDetails = font.getDetails();
+		let characterInfoMap = fontDetails.chars;
+		let kernings = fontDetails.kernings;
+		let transparentColor = font.getTransparentColor();
+		let lines = text.split(/\r?\n|\r/);
+		let lineX = x;
+		for (let line of lines) {
+			let lastCharacter = null;
+			for (let i = line.length - 1; i >= 0; i--) {
+				let character = line[i];
+				let characterInfo = characterInfoMap[character];
+				if (!characterInfo) {
+					continue;
+				}
+				let kerning = kernings[character];
+				if (kerning && lastCharacter) {
+					kerning = kerning[lastCharacter];
+					if (kerning) {
+						x -= kerning.amount;
+					}
+				}
+				this.drawBitmap(fontBitmap, x + characterInfo.xoffset - characterInfo.width, y + characterInfo.yoffset,
+					transparentColor, characterInfo.x, characterInfo.y, characterInfo.width,
+					characterInfo.height);
+				x -= characterInfo.xadvance;
+			}
+			x = lineX;
+			y += lineHeight;
+		}
+	};
+	}
+
+function loadRes() {
+	res.font = {};
+	
+	res.font.white_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	res.font.white_18.setSize(18);
+	res.font.white_18.setColor(palette.indexOf(0xffffff));
+
+	res.font.black_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	res.font.black_18.setSize(18);
+	res.font.black_18.setColor(palette.indexOf(0x000000));
+
+	res.font.red_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	res.font.red_18.setSize(18);
+	res.font.red_18.setColor(palette.indexOf(0xff0000));
+
+	res.font.black_55 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	res.font.black_55.setSize(55);
+	res.font.black_55.setColor(palette.indexOf(0x000000));
+
+	res.font.black_36 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+	res.font.black_36.setSize(36);
+	res.font.black_36.setColor(palette.indexOf(0x000000));
+	
+	res.icons = {};
+	res.icons.arrow_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_down_black.bmp'));
+	res.icons.arrow_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_top_red.bmp'));
+	res.icons.arrow_right_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_right_black.bmp'));
+	res.icons.rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop.bmp'));
+	res.icons.kph = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/kph.bmp'));
+	res.icons.snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/snow.bmp'));
+	res.icons.sunrise = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));
+	res.icons.sunset = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunset.bmp'));
+	res.icons.deg = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg.bmp'));
+	
+	res.windir_icons = {};
+	res.windir_icons.E = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/E.bmp'));
+	res.windir_icons.N = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/N.bmp'));
+	res.windir_icons.NE = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/NE.bmp'));
+	res.windir_icons.NW = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/NW.bmp'));
+	res.windir_icons.S = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/S.bmp'));
+	res.windir_icons.SE = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/SE.bmp'));
+	res.windir_icons.SW = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/SW.bmp'));
+	res.windir_icons.W = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/W.bmp'));
+	
+	res.weather_icons = {};
+	res.weather_icons.clear =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/clear.bmp'));
+	res.weather_icons.rain =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain.bmp'));
+	res.weather_icons.snow =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/snow.bmp'));
+	res.weather_icons.sleet =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/sleet.bmp'));
+	res.weather_icons.wind =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/wind.bmp'));
+	res.weather_icons.hazy =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/hazy.bmp'));
+	res.weather_icons.cloudy =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/cloudy.bmp'));
+	res.weather_icons.partlysunny =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/partlysunny.bmp'));
+	res.weather_icons.unknown =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/unknown.bmp'));
+	
 }
