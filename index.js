@@ -79,7 +79,7 @@ addDrawTextRightFunction();
 
 var startTime = moment();
 
-logger.info('init fonts and bitmaps');
+logger.info('load fonts and bitmaps');
 
 var bitmap = new bmp_lib.BMPBitmap(640, 384);
 var palette = bitmap.palette;
@@ -436,16 +436,16 @@ function drawForecastDay(x, y, data) {
 	//bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
 	bitmap.drawTextRight(res.font.black_18, Math.round(data.windSpeed) + '-' + Math.round(data.windGust), x + 55, y + 110);
 
-	bitmap.drawBitmap(res.icons.rain, x + 1, y + 135);
-	bitmap.drawText(res.font.black_18, Math.round(data.precipProbability * 100) + '%', x + 20, y + 135);
+	bitmap.drawBitmap(res.icons.rain, x + 5, y + 135);
+	bitmap.drawText(res.font.black_18, Math.round(data.precipProbability * 100) + '%', x + 25, y + 135);
 	let rainVal = Math.round(data.precipIntensity * 24);
 	if (rainVal > 0) {
-		bitmap.drawText(res.font.black_18, rainVal + ' mm', x + 20, y + 158);
+		bitmap.drawText(res.font.black_18, rainVal + ' mm', x + 25, y + 158);
 	}
 	let snowVal = Math.round(data.precipAccumulation);
 	if (snowVal > 0) {
 		bitmap.drawBitmap(res.icons.snow, x + 4, y + 180);
-		bitmap.drawText(res.font.black_18, '' + snowVal + ' cm', x + 28, y + 180);
+		bitmap.drawText(res.font.black_18, '' + snowVal + ' cm', x + 25, y + 180);
 	}
 
 	return colWidth;
