@@ -83,6 +83,11 @@ logger.info('load fonts and bitmaps');
 
 var bitmap = new bmp_lib.BMPBitmap(640, 384);
 var palette = bitmap.palette;
+var color = {
+	white: palette.indexOf(0xffffff),
+	black: palette.indexOf(0x000000),
+	red: palette.indexOf(0xff0000)
+};
 
 loadRes();
 
@@ -268,12 +273,12 @@ function drawImage(data_netatmo, data_darksky) {
 		//start from previous bmp
 		bitmap = bmp_lib.BMPBitmap.fromFile(outputFile);
 		// and erase netatmo part, which will be freshed. 
-		bitmap.drawFilledRect(0, 0, 640, 105, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
-		bitmap.drawFilledRect(160, 105, 480, 77, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
+		bitmap.drawFilledRect(0, 0, 640, 105, color.white, color.white);
+		bitmap.drawFilledRect(160, 105, 480, 77, color.white, color.white);
 	} else {
 		//redraw all. 
 		logger.info('full refresh');
-		bitmap.clear(palette.indexOf(0xffffff));	
+		bitmap.clear(color.white);	
 	}
 	
 	
@@ -291,8 +296,8 @@ function drawImage(data_netatmo, data_darksky) {
 	drawDate(data_netatmo.time);
 
 	if (data_darksky) {
-		bitmap.drawFilledRect(0, 183, 640, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
-		bitmap.drawFilledRect(0, 203, 640, 1, palette.indexOf(0xff0000), null);
+		bitmap.drawFilledRect(0, 183, 640, 20, color.black, color.black);
+		bitmap.drawFilledRect(0, 203, 640, 1, color.red, null);
 		drawEphemerides(data_darksky.daily.data[0].sunriseTime, data_darksky.daily.data[0].sunsetTime);
 		let xInc = 6;
 		for (let i = 0; i < 7; i++) {
@@ -300,10 +305,6 @@ function drawImage(data_netatmo, data_darksky) {
 		}
 	}
 	
-	//erase last separation line
-	/*bitmap.drawFilledRect(638,183,2,20, palette.indexOf(0x000000),  palette.indexOf(0x000000));
-	bitmap.drawFilledRect(638,203,2,1, palette.indexOf(0xff0000),  palette.indexOf(0xff0000));
-	bitmap.drawFilledRect(638,204,2,200, palette.indexOf(0xffffff),  palette.indexOf(0xffffff));*/
 	bitmap.save(outputFile);
 	logger.info('image rendered after', getTimespan());
 }
@@ -410,13 +411,12 @@ function drawForecastDay(x, y, data) {
 	let colWidth = 90;
 
 	if (isSunday) {
-		bitmap.drawFilledRect(x + 94, y, 2, 20, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
-		//bitmap.drawFilledRect(x + 90, y + 20, 3, 200, palette.indexOf(0xff0000), palette.indexOf(0xff0000));
+		bitmap.drawFilledRect(x + 94, y, 2, 20, color.white, color.white);
 		drawDotLine( x + 91, y + 20, 200);
-		bitmap.drawFilledRect(x + 93, y + 20, 3, 200, palette.indexOf(0x000000), palette.indexOf(0x000000));
+		bitmap.drawFilledRect(x + 93, y + 20, 3, 200, color.black, color.black);
 		colWidth = 95;
 	} else {
-		bitmap.drawFilledRect(x + 89, y, 2, 20, palette.indexOf(0xffffff), palette.indexOf(0xffffff));
+		bitmap.drawFilledRect(x + 89, y, 2, 20, color.white,color.white);
 		drawDotLine(x + 89, y + 20, 200);
 	}
 
@@ -457,14 +457,13 @@ function drawDate(date) {
 }
 
 function drawOutline() {
-	bitmap.drawFilledRect(0, 0, 159, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
-	bitmap.drawFilledRect(161, 0, 158, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
-	bitmap.drawFilledRect(321, 0, 158, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
-	bitmap.drawFilledRect(481, 0, 159, 20, palette.indexOf(0x000000), palette.indexOf(0x000000));
-	bitmap.drawFilledRect(0, 20, 640, 1, palette.indexOf(0xff0000), null);
+	bitmap.drawFilledRect(0, 0, 159, 20, color.black, color.black);
+	bitmap.drawFilledRect(161, 0, 158, 20, color.black, color.black);
+	bitmap.drawFilledRect(321, 0, 158, 20, color.black, color.black);
+	bitmap.drawFilledRect(481, 0, 159, 20, color.black, color.black);
+	bitmap.drawFilledRect(0, 20, 640, 1, color.red, null);
 	drawHorizDotLine(160, 65, 480);
 	drawHorizDotLine(0, 105, 160);
-	//bitmap.drawFilledRect(160, 65, 480, 1, palette.indexOf(0xff0000), null);
 	drawDotLine(159, 20, 163);
 	drawDotLine(319, 20, 163);
 	drawDotLine(479, 20, 140);
@@ -515,14 +514,14 @@ function drawCol( x, temp, hum, co2, temp_min, temp_max, noise) {
 	//hum = 70;
 	//hum
 	if ( isHumWarning(hum)) {
-		bitmap.drawFilledRect(x + 1, 66, 158, 43, null, palette.indexOf(0xff0000));
+		bitmap.drawFilledRect(x + 1, 66, 158, 43, null, color.red);
 	}
 	bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 70);
 	bitmap.drawText(res.font.black_18, "%", x + 95, 72);
 	//co2 = 1200;
 	//co2
 	if (isCO2Warning(co2)) {
-		bitmap.drawFilledRect(x + 1, 107, 158, 38, null, palette.indexOf(0xff0000));
+		bitmap.drawFilledRect(x + 1, 107, 158, 38, null, color.red);
 	}
 	bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 108);
 	bitmap.drawText(res.font.black_18, "ppm", x + 95, 110);
@@ -530,7 +529,7 @@ function drawCol( x, temp, hum, co2, temp_min, temp_max, noise) {
 	//noise
 	if (noise) {
 		if (isNoiseWarning(noise_avg_curr)) {
-			bitmap.drawFilledRect(x + 1, 143, 158, 40, null, palette.indexOf(0xff0000));
+			bitmap.drawFilledRect(x + 1, 143, 158, 40, null, color.red);
 		}
 		bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 145);
 		bitmap.drawText(res.font.black_18, "dB", x + 95, 147);
@@ -669,9 +668,9 @@ function drawDotLine(left, top, height) {
 
 		for (var y = top; y < top + height; y++) {
 			if (pixon) {
-				bitmap.setPixel(x, y, palette.indexOf(0x000000));
+				bitmap.setPixel(x, y, color.black);
 			} else {
-				bitmap.setPixel(x, y, palette.indexOf(0xffffff));
+				bitmap.setPixel(x, y, color.white);
 			}
 			pixon = !pixon;
 		}
@@ -684,9 +683,9 @@ function drawHorizDotLine(left, top, width) {
 
 	for (var x = left; x < left + width; x++) {
 		if (pixon) {
-			bitmap.setPixel(x, top, palette.indexOf(0x000000));
+			bitmap.setPixel(x, top, color.black);
 		} else {
-			bitmap.setPixel(x, top, palette.indexOf(0xffffff));
+			bitmap.setPixel(x, top, color.white);
 		}
 		pixon = !pixon;
 	}
@@ -885,23 +884,23 @@ function loadRes() {
 	
 	res.font.white_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
 	res.font.white_18.setSize(18);
-	res.font.white_18.setColor(palette.indexOf(0xffffff));
+	res.font.white_18.setColor(color.white);
 
 	res.font.black_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
 	res.font.black_18.setSize(18);
-	res.font.black_18.setColor(palette.indexOf(0x000000));
+	res.font.black_18.setColor(color.black);
 
 	res.font.red_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
 	res.font.red_18.setSize(18);
-	res.font.red_18.setColor(palette.indexOf(0xff0000));
+	res.font.red_18.setColor(color.red);
 
 	res.font.black_55 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
 	res.font.black_55.setSize(55);
-	res.font.black_55.setColor(palette.indexOf(0x000000));
+	res.font.black_55.setColor(color.black);
 
 	res.font.black_36 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
 	res.font.black_36.setSize(36);
-	res.font.black_36.setColor(palette.indexOf(0x000000));
+	res.font.black_36.setColor(color.black);
 	
 	res.icons = {};
 	res.icons.arrow_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_down_black.bmp'));
