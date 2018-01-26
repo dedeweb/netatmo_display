@@ -318,9 +318,8 @@ function getDarkSkyIconFromCode(code) {
 		case 'rain':
 			return 'rain';
 		case 'snow':
-			return 'snow';
 		case 'sleet':
-			return 'sleet';
+			return 'snow';
 		case 'wind':
 			return 'wind';
 		case 'fog':
@@ -927,7 +926,6 @@ function loadRes() {
 	res.weather_icons.clear =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/clear.bmp'));
 	res.weather_icons.rain =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain.bmp'));
 	res.weather_icons.snow =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/snow.bmp'));
-	res.weather_icons.sleet =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/sleet.bmp'));
 	res.weather_icons.wind =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/wind.bmp'));
 	res.weather_icons.hazy =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/hazy.bmp'));
 	res.weather_icons.cloudy =  bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/cloudy.bmp'));
