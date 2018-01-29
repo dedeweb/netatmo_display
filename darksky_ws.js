@@ -80,7 +80,7 @@ function wsDarksky(opt) {
       case 'cloudy':
         return 'cloudy';
       case 'partly-cloudy-day':
-        return 'partlysunny';
+        return 'partly_cloudy';
       default:
         return 'unknown';
     }

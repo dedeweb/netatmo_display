@@ -37,11 +37,11 @@ function imageGenerator(opt) {
 
 
   // private functions
-  function drawImage(data_netatmo, data_darksky) {
+  function drawImage(data_netatmo, data_forecast) {
     led.goBusy();
 
 
-    if (!data_darksky && fs.existsSync(outputFile)) {
+    if (!data_forecast && fs.existsSync(outputFile)) {
       logger.info('partial refresh : refresh only netatmo data. ')
       //start from previous bmp
       bitmap = bmp_lib.BMPBitmap.fromFile(outputFile);
@@ -88,13 +88,13 @@ function imageGenerator(opt) {
 
     drawDate(data_netatmo.time);
 
-    if (data_darksky) {
+    if (data_forecast) {
       bitmap.drawFilledRect(0, 183, 640, 20, color.black, color.black);
       bitmap.drawFilledRect(0, 203, 640, 1, color.red, null);
-      drawEphemerides(data_darksky.sunrise, data_darksky.sunset);
+      drawEphemerides(data_forecast.sunrise, data_forecast.sunset);
       let xInc = 6;
       for (let i = 0; i < 7; i++) {
-        xInc += drawForecastDay(xInc, 183, data_darksky.days[i]);
+        xInc += drawForecastDay(xInc, 183, data_forecast.days[i]);
       }
     }
 
@@ -128,7 +128,6 @@ function imageGenerator(opt) {
       bitmap.drawFilledRect(x + 89, y, 2, 20, color.white, color.white);
       drawDotLine(x + 89, y + 20, 200);
     }
-
     bitmap.drawBitmap(res.weather_icons[data.icon], x + 12, y + 21);
     bitmap.drawText(res.font.white_18, day, x + 15, y + 2);
 
@@ -326,7 +325,11 @@ function imageGenerator(opt) {
     res.weather_icons.wind = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/wind.bmp'));
     res.weather_icons.hazy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/hazy.bmp'));
     res.weather_icons.cloudy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/cloudy.bmp'));
-    res.weather_icons.partlysunny = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/partlysunny.bmp'));
+    res.weather_icons.partly_cloudy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/partlysunny.bmp'));
+    res.weather_icons.mostly_sunny = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/mostly_sunny.bmp'));
+    res.weather_icons.rain_sun = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain_sun.bmp'));
+    res.weather_icons.light_rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/light_rain.bmp'));
+    res.weather_icons.tstorm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/tstorm.bmp'));
     res.weather_icons.unknown = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/unknown.bmp'));
   }
 

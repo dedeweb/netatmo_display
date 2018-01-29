@@ -168,9 +168,14 @@ function refresh(triggerNextUpdate) {
 						logger.info('darksky data received after', getTimespan());
 						last_darksky_update = moment();
 						bmp_gen.drawImage(data_netatmo, data_darksky);
-						return meteoblue_ws.getData();
-					}).then(function() {
-						logger.info('data meteoblue received');
+						meteoblue_ws.getData(data_darksky).then(function(data_meteoblue) {
+							logger.info('meteoblue data received after', getTimespan());
+							bmp_gen.drawImage(data_netatmo, data_meteoblue);
+						}).catch(function(e) {
+							logger.warn('cannot load data from meteoblue');
+							logger.warn(e);
+							bmp_gen.drawImage(data_netatmo, data_darksky);
+						});
 					}).catch(function(e) {
 						logger.error('error getting forecast ! ', e);
 						bmp_gen.drawImage(data_netatmo, null);
@@ -261,7 +266,6 @@ function getTimespan() {
 	let duration = moment(moment().diff(startTime));
 	return duration.minutes() + 'm' + duration.seconds() + '.' + duration.milliseconds() + 's ';
 }
-
 
 function shouldUpdateForecast() {
 	let curDate = moment();

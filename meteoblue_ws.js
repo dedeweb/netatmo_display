@@ -16,16 +16,60 @@ function wsMeteoblue(opt) {
 
 	// private functions
 
-	function getData() {
+	function getData(previous_data) {
 		return getCheerioObj().then(function($) {
-			let data = [];
+			let weatherObj = previous_data;
+			if (!weatherObj) {
+				weatherObj = {
+					sunset: data_darksky.daily.data[0].sunsetTime,
+					sunrise: data_darksky.daily.data[0].sunriseTime,
+					days: []
+				};
+
+				for (let i = 0; i < 7; i++) {
+					let dayObj = {
+						timestamp: null,
+						icon: '',
+						min_temp: 0,
+						max_temp: 0,
+						wind: 0,
+						wind_dir: '',
+						precip_prob: 0,
+						rain_qty: 0,
+						snow_qty: 0,
+						predictability: 0
+					};
+					weatherObj.days.push(dayObj);
+				}
+			}
 			$('#tab_results #tab_wrapper>.tab').each(function(i, elt) {
-				let day_data = {};
-				day_data.name = $(this).find('.day .tab_day_short').text().trim();
-				day_data.max_temp = $(this).find('.temps .tab_temp_max').text().replace('°C', '').trim();
-				day_data.min_temp = $(this).find('.temps .tab_temp_min').text().replace('°C', '').trim();
-				day_data.wind = $(this).find('.data .wind').text().replace('km/h', '').trim();
-				let tab_rain = $(this).find('.data .tab_precip').text().replace('mm', '').replace('cm', '').trim().split('-');
+				//let day_data = {};
+				//day_data.name = $(this).find('.day .tab_day_short').text().trim();
+				
+				
+				let max_temp =  $(this).find('.temps .tab_temp_max').text().replace('°C', '').trim();
+				logger.debug('update max_temp',weatherObj.days[i].max_temp, '->',  max_temp);
+				weatherObj.days[i].max_temp = max_temp;
+				
+				let min_temp = $(this).find('.temps .tab_temp_min').text().replace('°C', '').trim();
+				logger.debug('update min_temp',weatherObj.days[i].min_temp, '->',  min_temp);
+				weatherObj.days[i].min_temp = min_temp;
+				
+				let wind = $(this).find('.data .wind').text().replace('km/h', '').trim();
+				logger.debug('update wind',weatherObj.days[i].wind, '->',  wind);
+				weatherObj.days[i].wind = wind;
+				
+				let wind_css_class = $(this).find('.data .wind .glyph').attr('class');
+				let regex_windir = /.*(N|E|S|W|NE|NW|SE|SW)$/gm.exec(wind_css_class);
+				if (regex_windir) {
+					let wind_dir = regex_windir[1]; 
+					logger.debug('update wind_dir',weatherObj.days[i].wind_dir, '->',  wind_dir);
+					weatherObj.days[i].wind_dir = wind_dir;	
+				} else {
+					logger.warn('invalid win dir. Css class', wind_css_class);
+				}
+				
+				/*let tab_rain = $(this).find('.data .tab_precip').text().replace('mm', '').replace('cm', '').trim().split('-');
 				day_data.rain_min = 0;
 				day_data.rain_max = 0;
 				if (tab_rain.length > 0) {
@@ -33,17 +77,17 @@ function wsMeteoblue(opt) {
 				}
 				if (tab_rain.length > 1) {
 					day_data.rain_max = tab_rain[1];
-				}
+				}*/
 
-				day_data.sun = $(this).find('.data .tab_sun').text().replace('h', '').trim();
-				day_data.predictability = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'))[1];
+				//day_data.sun = $(this).find('.data .tab_sun').text().replace('h', '').trim();
+				weatherObj.days[i].predictability = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'))[1];
+				
 				let iconNber = parseInt(/.*p(\d*)_iday/gm.exec($(this).find('.weather .pictoicon .picon').attr('class'))[1]);
-
-				day_data.icon = nberToIco(iconNber);
-				data.push(day_data);
+				let icon = nberToIco(iconNber);
+				logger.debug('update icon',weatherObj.days[i].icon, '->',  icon);
+				weatherObj.days[i].icon = icon;
 			});
-			logger.debug('data meteoblue', JSON.stringify(data));
-			return data;
+			return weatherObj;
 		});
 	}
 
@@ -86,7 +130,7 @@ function wsMeteoblue(opt) {
 			case 17:
 				return 'snow';
 			case 12:
-				return 'lightrain';
+				return 'light_rain';
 			default:
 				logger.warn('unknown code ', nber);
 				return 'unknown';
