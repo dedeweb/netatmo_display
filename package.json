@@ -10,6 +10,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "bitmap-manipulation": "^2.0.0",
+    "cheerio": "^1.0.0-rc.2",
     "child-process-promise": "^2.2.1",
     "lodash": "^4.17.4",
     "moment": "^2.19.2",
