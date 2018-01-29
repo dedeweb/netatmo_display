@@ -1,9 +1,8 @@
-const bmp_lib = require('bitmap-manipulation');
 const path = require('path');
 //const netatmo = require('netatmo');
 const request = require('request-promise');
 const _ = require('lodash');
-const moment = require('moment');
+const moment = require('moment');moment.locale('fr');
 const spawn = require('child-process-promise').spawn;
 const winston = require('winston');
 const fs = require('fs');
@@ -32,10 +31,9 @@ const morning_hour = 6; //trigger on ext. temp only after this hour.
 //forecast update times
 const forecast_update_times = ['06:00:00', '18:30:00']
 
-//led flash interval
-const led_flash_interval = 1000;
 
-
+//=========================================================================================
+//load internal libs
 var logger = new(winston.Logger)({
 	transports: [
 		new winston.transports.Console({
@@ -63,7 +61,9 @@ var logger = new(winston.Logger)({
 		})
 	]
 });
-
+const led = require(path.join(__dirname, 'led'))({
+	logger: logger
+});
 const meteoblue_ws = require(path.join(__dirname, 'meteoblue_ws'))({
 	logger: logger
 });
@@ -71,35 +71,27 @@ const darksky_ws = require(path.join(__dirname, 'darksky_ws'))({
 	logger: logger
 });
 
+var startTime = moment();
+const bmp_gen = require(path.join(__dirname, 'bitmap_gen'))({
+	logger: logger,
+	outputFile:outputFile,
+	getTimespan: getTimespan
+});
+logger.info('script launch after', getTimespan());
+
+//set global working vars
 var refreshing = false;
 var previous_data = null;
 var last_darksky_update = null;
 var noise_values = [];
 var noise_avg_prev = 0;
 var noise_avg_curr = 0;
-var led = {};
-var res = {};
 
-moment.locale('fr');
+
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-addDrawTextRightFunction();
 
-var startTime = moment();
 
-logger.info('load fonts and bitmaps');
-
-var bitmap = new bmp_lib.BMPBitmap(640, 384);
-var palette = bitmap.palette;
-var color = {
-	white: palette.indexOf(0xffffff),
-	black: palette.indexOf(0x000000),
-	red: palette.indexOf(0xff0000)
-};
-
-loadRes();
-
-logger.info('script launch after', getTimespan());
 
 //launch process
 refresh(true);
@@ -112,7 +104,7 @@ function refresh(triggerNextUpdate) {
 	}
 	logger.info('------------------------------------------------------');
 	startTime = moment();
-	goBusyGreen();
+	led.goBusyGreen();
 	let nextUpdateTimeoutSet = false;
 	getDataFromNetatmo().then(function(data_netatmo) {
 			if (data_netatmo) {
@@ -122,8 +114,6 @@ function refresh(triggerNextUpdate) {
 					lastStoreTimeSpan = moment(lastStoreTimeSpanMs);
 
 				logger.info('last store date was', lastStoreTimeSpan.minutes() + 'm' + lastStoreTimeSpan.seconds() + 's ago');
-
-				addNoiseToTab(data_netatmo.salon.noise);
 
 				if (triggerNextUpdate) {
 					let shouldAbort = false;
@@ -177,23 +167,23 @@ function refresh(triggerNextUpdate) {
 					return darksky_ws.getData().then(function(data_darksky) {
 						logger.info('darksky data received after', getTimespan());
 						last_darksky_update = moment();
-						drawImage(data_netatmo, data_darksky);
+						bmp_gen.drawImage(data_netatmo, data_darksky);
 						return meteoblue_ws.getData();
 					}).then(function() {
 						logger.info('data meteoblue received');
 					}).catch(function(e) {
 						logger.error('error getting forecast ! ', e);
-						drawImage(data_netatmo, null);
+						bmp_gen.drawImage(data_netatmo, null);
 					});
 				} else {
 					logger.info('no need to refresh forecast.');
-					drawImage(data_netatmo, null);
+					bmp_gen.drawImage(data_netatmo, null);
 				}
 			} else {
 				logger.error('no netatmo data :(');
 			}
 		}).then(function() {
-			goBusyFlashing();
+			led.goBusyFlashing();
 			return sendToScreen();
 		})
 		.catch(function(error) {
@@ -216,7 +206,7 @@ function refresh(triggerNextUpdate) {
 				}, 660000);
 			}
 			refreshing = false;
-			exitBusy();
+			led.exitBusy();
 		});
 }
 
@@ -272,52 +262,6 @@ function getTimespan() {
 	return duration.minutes() + 'm' + duration.seconds() + '.' + duration.milliseconds() + 's ';
 }
 
-function drawImage(data_netatmo, data_darksky) {
-	goBusy();
-
-
-	if (!data_darksky && fs.existsSync(outputFile)) {
-		logger.info('partial refresh : refresh only netatmo data. ')
-		//start from previous bmp
-		bitmap = bmp_lib.BMPBitmap.fromFile(outputFile);
-		// and erase netatmo part, which will be freshed. 
-		bitmap.drawFilledRect(0, 0, 640, 105, color.white, color.white);
-		bitmap.drawFilledRect(160, 105, 480, 77, color.white, color.white);
-	} else {
-		//redraw all. 
-		logger.info('full refresh');
-		bitmap.clear(color.white);
-	}
-
-
-
-	drawOutline();
-
-	drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max);
-	drawCol(160,
-		data_netatmo.salon.temp, data_netatmo.salon.hum, data_netatmo.salon.co2, data_netatmo.salon.temp_min, data_netatmo.salon.temp_max, data_netatmo.salon.noise);
-	drawCol(320,
-		data_netatmo.chambre.temp, data_netatmo.chambre.hum, data_netatmo.chambre.co2, data_netatmo.chambre.temp_min, data_netatmo.chambre.temp_max);
-	drawCol(480,
-		data_netatmo.bureau.temp, data_netatmo.bureau.hum, data_netatmo.bureau.co2, data_netatmo.bureau.temp_min, data_netatmo.bureau.temp_max);
-
-	drawDate(data_netatmo.time);
-
-	if (data_darksky) {
-		bitmap.drawFilledRect(0, 183, 640, 20, color.black, color.black);
-		bitmap.drawFilledRect(0, 203, 640, 1, color.red, null);
-		drawEphemerides(data_darksky.sunrise, data_darksky.sunset);
-		let xInc = 6;
-		for (let i = 0; i < 7; i++) {
-			xInc += drawForecastDay(xInc, 183, data_darksky.days[i]);
-		}
-	}
-
-	bitmap.save(outputFile);
-	logger.info('image rendered after', getTimespan());
-}
-
-
 
 function shouldUpdateForecast() {
 	let curDate = moment();
@@ -354,149 +298,6 @@ function shouldUpdateForecast() {
 	}
 
 	return false;
-}
-
-function drawEphemerides(sunrise, sunset) {
-	let sunriseTxt = moment('' + sunrise, 'X').format('HH:mm');
-	let sunsetTxt = moment('' + sunset, 'X').format('HH:mm');
-
-	bitmap.drawBitmap(res.icons.sunrise, 28, 123);
-	bitmap.drawText(res.font.black_18, sunriseTxt, 20, 150);
-	bitmap.drawBitmap(res.icons.sunset, 108, 123);
-	bitmap.drawText(res.font.black_18, sunsetTxt, 100, 150);
-}
-
-function drawForecastDay(x, y, data) {
-	let momentObj = moment('' + data.time, 'X');
-	let day = momentObj.format('ddd DD').toUpperCase();
-	let isSunday = momentObj.format('d') === '0';
-
-	let colWidth = 90;
-
-	if (isSunday) {
-		bitmap.drawFilledRect(x + 94, y, 2, 20, color.white, color.white);
-		drawDotLine(x + 91, y + 20, 200);
-		bitmap.drawFilledRect(x + 93, y + 20, 3, 200, color.black, color.black);
-		colWidth = 95;
-	} else {
-		bitmap.drawFilledRect(x + 89, y, 2, 20, color.white, color.white);
-		drawDotLine(x + 89, y + 20, 200);
-	}
-
-	bitmap.drawBitmap(res.weather_icons[data.icon], x + 12, y + 21);
-	bitmap.drawText(res.font.white_18, day, x + 15, y + 2);
-
-	bitmap.drawBitmap(res.icons.arrow_down_black, x + 4, y + 87);
-	bitmap.drawText(res.font.black_18, '' + data.min_temp + ' °', x + 18, y + 85);
-
-	bitmap.drawBitmap(res.icons.arrow_top_red, x + 47, y + 87);
-	bitmap.drawText(res.font.red_18, '' + data.max_temp + ' °', x + 61, y + 85);
-
-	/*let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
-	bitmap.drawBitmap(wind_icon,x+5,y+100);*/
-	bitmap.drawBitmap(res.windir_icons[data.wind_dir], x + 5, y + 110);
-	bitmap.drawBitmap(res.icons.kph, x + 60, y + 110);
-	//bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
-	bitmap.drawTextRight(res.font.black_18, '' + data.wind, x + 55, y + 110);
-
-	bitmap.drawBitmap(res.icons.rain, x + 5, y + 135);
-	bitmap.drawText(res.font.black_18, Math.round(data.precip_prob * 100) + '%', x + 25, y + 135);
-	
-	if (data.rain_qty > 0) {
-		bitmap.drawText(res.font.black_18, data.rain_qty + ' mm', x + 25, y + 158);
-	}
-
-	if (data.snow_qty > 0) {
-		bitmap.drawBitmap(res.icons.snow, x + 4, y + 180);
-		bitmap.drawText(res.font.black_18, '' + data.snow_qty + ' cm', x + 25, y + 180);
-	}
-
-	return colWidth;
-}
-
-function drawDate(date) {
-	let dateStr = 'mesuré le ' + moment('' + date, 'X').format('DD MMM à HH:mm');
-	bitmap.drawTextRight(res.font.black_18, dateStr, 635, 165);
-}
-
-function drawOutline() {
-	bitmap.drawFilledRect(0, 0, 159, 20, color.black, color.black);
-	bitmap.drawFilledRect(161, 0, 158, 20, color.black, color.black);
-	bitmap.drawFilledRect(321, 0, 158, 20, color.black, color.black);
-	bitmap.drawFilledRect(481, 0, 159, 20, color.black, color.black);
-	bitmap.drawFilledRect(0, 20, 640, 1, color.red, null);
-	drawHorizDotLine(160, 65, 480);
-	drawHorizDotLine(0, 105, 160);
-	drawDotLine(159, 20, 163);
-	drawDotLine(319, 20, 163);
-	drawDotLine(479, 20, 140);
-
-	bitmap.drawText(res.font.white_18, "EXTÉRIEUR", 15, 1);
-	bitmap.drawText(res.font.white_18, "SÉJOUR", 175, 1);
-	bitmap.drawText(res.font.white_18, "CHAMBRE", 335, 1);
-	bitmap.drawText(res.font.white_18, "BUREAU", 495, 1);
-}
-
-function drawFirstCol(temp, temp_trend, temp_min, temp_max) {
-
-	bitmap.drawTextRight(res.font.black_55, '' + temp, 115, 25);
-	bitmap.drawBitmap(res.icons.deg, 123, 35);
-
-	let trendIcon = null;
-	if (temp_trend === 'up') {
-		trendIcon = res.icons.arrow_top_red;
-	} else if (temp_trend === 'down') {
-		trendIcon = res.icons.arrow_down_black
-	} else if (temp_trend === 'stable') {
-		trendIcon = res.icons.arrow_right_black;
-	}
-
-	bitmap.drawBitmap(trendIcon, 125, 55);
-
-	bitmap.drawBitmap(res.icons.arrow_down_black, 20, 82);
-	bitmap.drawText(res.font.black_18, '' + temp_min + ' °', 35, 82);
-
-	bitmap.drawBitmap(res.icons.arrow_top_red, 90, 86);
-	bitmap.drawText(res.font.red_18, '' + temp_max + ' °', 105, 82);
-
-}
-
-function drawCol(x, temp, hum, co2, temp_min, temp_max, noise) {
-
-	//temp
-	bitmap.drawTextRight(res.font.black_36, '' + temp, x + 70, 25);
-	bitmap.drawText(res.font.black_18, "°", x + 75, 27);
-
-	//temp minmax
-	bitmap.drawBitmap(res.icons.arrow_top_red, x + 95, 28);
-	bitmap.drawText(res.font.red_18, '' + temp_max + ' °', x + 112, 26);
-	bitmap.drawBitmap(res.icons.arrow_down_black, x + 95, 45);
-	bitmap.drawText(res.font.black_18, '' + temp_min + ' °', x + 112, 43);
-
-
-	//hum = 70;
-	//hum
-	if (isHumWarning(hum)) {
-		bitmap.drawFilledRect(x + 1, 66, 158, 43, null, color.red);
-	}
-	bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 70);
-	bitmap.drawText(res.font.black_18, "%", x + 95, 72);
-	//co2 = 1200;
-	//co2
-	if (isCO2Warning(co2)) {
-		bitmap.drawFilledRect(x + 1, 107, 158, 38, null, color.red);
-	}
-	bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 108);
-	bitmap.drawText(res.font.black_18, "ppm", x + 95, 110);
-
-	//noise
-	if (noise) {
-		if (isNoiseWarning(noise_avg_curr)) {
-			bitmap.drawFilledRect(x + 1, 143, 158, 40, null, color.red);
-		}
-		bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 145);
-		bitmap.drawText(res.font.black_18, "dB", x + 95, 147);
-	}
 }
 
 function isHumWarning(hum) {
@@ -625,118 +426,6 @@ function shouldUpdateNoise(lastVal, newVal) {
 	}
 }
 
-function drawDotLine(left, top, height) {
-	var pixon = true;
-	for (var x = left; x < left + 2; x++) {
-
-		for (var y = top; y < top + height; y++) {
-			if (pixon) {
-				bitmap.setPixel(x, y, color.black);
-			} else {
-				bitmap.setPixel(x, y, color.white);
-			}
-			pixon = !pixon;
-		}
-		pixon = false;
-	}
-}
-
-function drawHorizDotLine(left, top, width) {
-	var pixon = true;
-
-	for (var x = left; x < left + width; x++) {
-		if (pixon) {
-			bitmap.setPixel(x, top, color.black);
-		} else {
-			bitmap.setPixel(x, top, color.white);
-		}
-		pixon = !pixon;
-	}
-}
-
-//led management. 
-
-
-if (PROD) {
-	led = {
-		red: new Gpio(2, 'low'),
-		green: new Gpio(3, 'low')
-	}
-}
-
-var ledFlashIntervalId = 0;
-
-function ledRedOn() {
-	if (led.red) {
-		led.red.writeSync(1);
-	}
-	ledGreenOff();
-	logger.debug('[led] red ON');
-}
-
-function ledRedOff() {
-	if (led.red) {
-		led.red.writeSync(0);
-	}
-	logger.debug('[led] red OFF');
-}
-
-function ledGreenOn() {
-	if (led.green) {
-		led.green.writeSync(1);
-	}
-	ledRedOff();
-	logger.debug('[led] green ON');
-}
-
-function ledGreenOff() {
-	if (led.green) {
-		led.green.writeSync(0);
-	}
-	logger.debug('[led] green OFF');
-}
-
-function goBusy() {
-	if (ledFlashIntervalId) {
-		clearInterval(ledFlashIntervalId);
-	}
-	ledRedOn();
-}
-
-function goBusyGreen() {
-	if (ledFlashIntervalId) {
-		clearInterval(ledFlashIntervalId);
-	}
-	ledGreenOn();
-}
-
-function goBusyFlashing() {
-	if (ledFlashIntervalId) {
-		clearInterval(ledFlashIntervalId);
-	}
-	logger.info('red led flashing');
-
-	let lighton = true;
-	ledFlashIntervalId = setInterval(function() {
-		if (lighton) {
-			ledRedOn();
-		} else {
-			ledRedOff();
-		}
-		lighton = !lighton;
-	}, led_flash_interval);
-}
-
-function exitBusy() {
-	if (ledFlashIntervalId) {
-		clearInterval(ledFlashIntervalId);
-	}
-	ledRedOff();
-	ledGreenOff();
-}
-
-
-
 function getDataFromNetatmo() {
 	let accessToken = '';
 	return request({
@@ -766,6 +455,8 @@ function getDataFromNetatmo() {
 		let capt_bureau = _.find(devices.modules, {
 			_id: '03:00:00:05:df:d2'
 		});
+		
+		addNoiseToTab(devices.dashboard_data.Noise);
 
 		return {
 			last_store_time: devices.last_status_store,
@@ -780,120 +471,36 @@ function getDataFromNetatmo() {
 			salon: {
 				temp: devices.dashboard_data.Temperature,
 				hum: devices.dashboard_data.Humidity,
+				hum_warning: isHumWarning(devices.dashboard_data.Humidity),
 				temp_min: devices.dashboard_data.min_temp,
 				temp_max: devices.dashboard_data.max_temp,
 				temp_trend: devices.dashboard_data.temp_trend,
 				co2: devices.dashboard_data.CO2,
-				noise: devices.dashboard_data.Noise
+				co2_warning: isCO2Warning(devices.dashboard_data.CO2),
+				noise: devices.dashboard_data.Noise,
+				noise_warning: isNoiseWarning(noise_avg_curr)
 			},
 			chambre: {
 				temp: capt_chambre.dashboard_data.Temperature,
 				hum: capt_chambre.dashboard_data.Humidity,
+				hum_warning: isHumWarning(capt_chambre.dashboard_data.Humidity),
 				temp_min: capt_chambre.dashboard_data.min_temp,
 				temp_max: capt_chambre.dashboard_data.max_temp,
 				temp_trend: capt_chambre.dashboard_data.temp_trend,
-				co2: capt_chambre.dashboard_data.CO2
+				co2: capt_chambre.dashboard_data.CO2,
+				co2_warning: isCO2Warning(capt_chambre.dashboard_data.CO2)
 			},
 			bureau: {
 				temp: capt_bureau.dashboard_data.Temperature,
 				hum: capt_bureau.dashboard_data.Humidity,
+				hum_warning: isHumWarning(capt_bureau.dashboard_data.Humidity),
 				temp_min: capt_bureau.dashboard_data.min_temp,
 				temp_max: capt_bureau.dashboard_data.max_temp,
 				temp_trend: capt_bureau.dashboard_data.temp_trend,
-				co2: capt_bureau.dashboard_data.CO2
+				co2: capt_bureau.dashboard_data.CO2,
+				co2_warning: isCO2Warning(capt_bureau.dashboard_data.CO2)
 			}
 		}
 	});
 }
 
-function addDrawTextRightFunction() {
-	bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
-		let fontBitmap = font.getBitmap();
-		let lineHeight = font.getLineHeight();
-		let fontDetails = font.getDetails();
-		let characterInfoMap = fontDetails.chars;
-		let kernings = fontDetails.kernings;
-		let transparentColor = font.getTransparentColor();
-		let lines = text.split(/\r?\n|\r/);
-		let lineX = x;
-		for (let line of lines) {
-			let lastCharacter = null;
-			for (let i = line.length - 1; i >= 0; i--) {
-				let character = line[i];
-				let characterInfo = characterInfoMap[character];
-				if (!characterInfo) {
-					continue;
-				}
-				let kerning = kernings[character];
-				if (kerning && lastCharacter) {
-					kerning = kerning[lastCharacter];
-					if (kerning) {
-						x -= kerning.amount;
-					}
-				}
-				this.drawBitmap(fontBitmap, x + characterInfo.xoffset - characterInfo.width, y + characterInfo.yoffset,
-					transparentColor, characterInfo.x, characterInfo.y, characterInfo.width,
-					characterInfo.height);
-				x -= characterInfo.xadvance;
-			}
-			x = lineX;
-			y += lineHeight;
-		}
-	};
-}
-
-function loadRes() {
-	res.font = {};
-
-	res.font.white_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	res.font.white_18.setSize(18);
-	res.font.white_18.setColor(color.white);
-
-	res.font.black_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	res.font.black_18.setSize(18);
-	res.font.black_18.setColor(color.black);
-
-	res.font.red_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	res.font.red_18.setSize(18);
-	res.font.red_18.setColor(color.red);
-
-	res.font.black_55 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	res.font.black_55.setSize(55);
-	res.font.black_55.setColor(color.black);
-
-	res.font.black_36 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
-	res.font.black_36.setSize(36);
-	res.font.black_36.setColor(color.black);
-
-	res.icons = {};
-	res.icons.arrow_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_down_black.bmp'));
-	res.icons.arrow_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_top_red.bmp'));
-	res.icons.arrow_right_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_right_black.bmp'));
-	res.icons.rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop.bmp'));
-	res.icons.kph = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/kph.bmp'));
-	res.icons.snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/snow.bmp'));
-	res.icons.sunrise = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));
-	res.icons.sunset = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunset.bmp'));
-	res.icons.deg = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg.bmp'));
-
-	res.windir_icons = {};
-	res.windir_icons.E = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/E.bmp'));
-	res.windir_icons.N = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/N.bmp'));
-	res.windir_icons.NE = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/NE.bmp'));
-	res.windir_icons.NW = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/NW.bmp'));
-	res.windir_icons.S = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/S.bmp'));
-	res.windir_icons.SE = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/SE.bmp'));
-	res.windir_icons.SW = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/SW.bmp'));
-	res.windir_icons.W = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/W.bmp'));
-
-	res.weather_icons = {};
-	res.weather_icons.clear = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/clear.bmp'));
-	res.weather_icons.rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain.bmp'));
-	res.weather_icons.snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/snow.bmp'));
-	res.weather_icons.wind = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/wind.bmp'));
-	res.weather_icons.hazy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/hazy.bmp'));
-	res.weather_icons.cloudy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/cloudy.bmp'));
-	res.weather_icons.partlysunny = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/partlysunny.bmp'));
-	res.weather_icons.unknown = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/unknown.bmp'));
-
-}
