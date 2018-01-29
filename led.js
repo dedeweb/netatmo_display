@@ -5,6 +5,7 @@ function ledMgr(opt) {
   const fs = require('fs');
   const path = require('path');
   const PROD = !fs.existsSync(path.join(__dirname, 'debug'));
+  const Gpio = require('onoff').Gpio;
   
  
   let led = {};

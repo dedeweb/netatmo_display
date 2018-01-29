@@ -7,7 +7,6 @@ const spawn = require('child-process-promise').spawn;
 const winston = require('winston');
 const fs = require('fs');
 const PROD = !fs.existsSync(path.join(__dirname, 'debug'));
-const Gpio = require('onoff').Gpio;
 
 
 const cmdTimeout = 70000;
