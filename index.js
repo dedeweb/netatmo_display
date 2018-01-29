@@ -166,8 +166,7 @@ function refresh(triggerNextUpdate) {
 					return darksky_ws.getData().then(function(data_darksky) {
 						logger.info('darksky data received after', getTimespan());
 						last_darksky_update = moment();
-						bmp_gen.drawImage(data_netatmo, data_darksky);
-						meteoblue_ws.getData(data_darksky).then(function(data_meteoblue) {
+						return meteoblue_ws.getData(data_darksky).then(function(data_meteoblue) {
 							logger.info('meteoblue data received after', getTimespan());
 							bmp_gen.drawImage(data_netatmo, data_meteoblue);
 						}).catch(function(e) {
