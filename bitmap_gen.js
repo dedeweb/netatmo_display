@@ -140,22 +140,39 @@ function imageGenerator(opt) {
     /*let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
     bitmap.drawBitmap(wind_icon,x+5,y+100);*/
     bitmap.drawBitmap(res.windir_icons[data.wind_dir], x + 5, y + 110);
-    bitmap.drawBitmap(res.icons.kph, x + 60, y + 110);
+    bitmap.drawTextRight(res.font.black_18, '' + data.wind, x + 40, y + 110);
+    bitmap.drawBitmap(res.icons.kph, x + 45, y + 110);
     //bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
-    bitmap.drawTextRight(res.font.black_18, '' + data.wind, x + 55, y + 110);
+    
 
-    bitmap.drawBitmap(res.icons.rain, x + 5, y + 135);
-    bitmap.drawText(res.font.black_18, Math.round(data.precip_prob * 100) + '%', x + 25, y + 135);
-
-    if (data.rain_qty > 0) {
-      bitmap.drawText(res.font.black_18, data.rain_qty + ' mm', x + 25, y + 158);
+   
+    if (data.precip_prob > 0 || data.rain_qty > 0 || data.snow_qty > 0 ) {
+      drawHorizDotLine(x,  y + 130, 89);
+      
+      
+      
+      if (data.rain_qty > 0) {
+        bitmap.drawBitmap(res.icons.rain, x + 5,  y + 142 );
+        drawPercentBar(data.precip_prob, x + 22,  y + 138, 50, 5, data.precip_prob >= 0.8);
+        bitmap.drawTextRight(res.font.black_18, data.rain_qty + '' , x + 40,  y + 147);
+        bitmap.drawBitmap(res.icons.mm, x + 45,y + 147);
+      } else if (data.snow_qty > 0) {
+        bitmap.drawBitmap(res.icons.snow, x + 5, y + 142);
+        drawPercentBar(data.precip_prob, x + 22,  y + 138, 50, 5, data.precip_prob >= 0.8);
+        bitmap.drawTextRight(res.font.black_18, data.snow_qty + '' , x + 40,y + 147);
+        bitmap.drawBitmap(res.icons.cm, x + 45, y + 147);
+      } else if(data.precip_prob > 0)  {
+        bitmap.drawBitmap(res.icons.rain, x + 5,  y + 140 );
+        drawPercentBar(data.precip_prob, x + 25,  y + 145, 50, 5, data.precip_prob > 0.7);
+      }
+      drawHorizDotLine(x,  y + 165, 89);
     }
-
-    if (data.snow_qty > 0) {
-      bitmap.drawBitmap(res.icons.snow, x + 4, y + 180);
-      bitmap.drawText(res.font.black_18, '' + data.snow_qty + ' cm', x + 25, y + 180);
+    
+    if(data.predictability) {
+       bitmap.drawBitmap(res.icons.predic, x + 5,  y + 175);
+       drawPercentBar(data.predictability, x + 25,  y + 175, 50, 15, data.predictability < 0.5);
     }
-
+    
     return colWidth;
   }
 
@@ -273,6 +290,22 @@ function imageGenerator(opt) {
     }
   }
 
+  function drawPercentBar(percent, left, top, width, height, is_red) {
+    bitmap.drawFilledRect(left, top, width, 1, color.black, color.black);
+    bitmap.drawFilledRect(left, top + height , width, 1, color.black, color.black);
+    bitmap.drawFilledRect(left, top, 1, height, color.black, color.black);
+    bitmap.drawFilledRect(left + width, top, 1, height, color.black, color.black);
+    
+    let inside_color = color.black;
+    if(is_red) {
+      inside_color = color.red;
+    }
+    
+    for (let i = 1; i<height; i++) {
+      bitmap.drawFilledRect(left +1, top + i, parseFloat(width-1) * percent , 1, inside_color, inside_color);
+    }
+  }
+  
   function loadRes() {
     logger.info('load bitmap and fonts...');
     res.font = {};
@@ -303,10 +336,13 @@ function imageGenerator(opt) {
     res.icons.arrow_right_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_right_black.bmp'));
     res.icons.rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop.bmp'));
     res.icons.kph = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/kph.bmp'));
+    res.icons.mm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/mm.bmp'));
+    res.icons.cm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/cm.bmp'));
     res.icons.snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/snow.bmp'));
     res.icons.sunrise = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));
     res.icons.sunset = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunset.bmp'));
     res.icons.deg = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg.bmp'));
+    res.icons.predic = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/predic.bmp'));
 
     res.windir_icons = {};
     res.windir_icons.E = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/E.bmp'));

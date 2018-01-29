@@ -80,7 +80,8 @@ function wsMeteoblue(opt) {
 				}*/
 
 				//day_data.sun = $(this).find('.data .tab_sun').text().replace('h', '').trim();
-				weatherObj.days[i].predictability = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'))[1];
+				let predic = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'))[1];
+				weatherObj.days[i].predictability = parseFloat(predic) / 5.0;
 				
 				let iconNber = parseInt(/.*p(\d*)_iday/gm.exec($(this).find('.weather .pictoicon .picon').attr('class'))[1]);
 				let icon = nberToIco(iconNber);
