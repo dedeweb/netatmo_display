@@ -303,7 +303,7 @@ function imageGenerator(opt) {
   }
   
   function loadRes() {
-    logger.info('load bitmap and fonts...');
+    logger.info('loading bitmap and fonts');
     res.font = {};
 
     res.font.white_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
