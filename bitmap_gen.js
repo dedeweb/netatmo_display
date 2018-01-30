@@ -92,7 +92,7 @@ function imageGenerator(opt) {
       bitmap.drawFilledRect(0, 183, 640, 20, color.black, color.black);
       bitmap.drawFilledRect(0, 203, 640, 1, color.red, null);
       drawEphemerides(data_forecast.sunrise, data_forecast.sunset);
-      let xInc = 6;
+      let xInc = 0;
       for (let i = 0; i < 7; i++) {
         xInc += drawForecastDay(xInc, 183, data_forecast.days[i]);
       }
@@ -117,25 +117,25 @@ function imageGenerator(opt) {
     let day = momentObj.format('ddd DD').toUpperCase();
     let isSunday = momentObj.format('d') === '0';
 
-    let colWidth = 90;
+    let colWidth = 91;
 
     if (isSunday) {
-      bitmap.drawFilledRect(x + 94, y, 2, 20, color.white, color.white);
-      drawDotLine(x + 91, y + 20, 200);
-      bitmap.drawFilledRect(x + 93, y + 20, 3, 200, color.black, color.black);
+      bitmap.drawFilledRect(x + 94, y, 2, 21, color.white, color.white);
+      drawDotLine(x + 91, y + 21, 200);
+      bitmap.drawFilledRect(x + 93, y + 21, 3, 200, color.black, color.black);
       colWidth = 95;
     } else {
-      bitmap.drawFilledRect(x + 89, y, 2, 20, color.white, color.white);
-      drawDotLine(x + 89, y + 20, 200);
+      bitmap.drawFilledRect(x + 90, y, 2, 21, color.white, color.white);
+      drawDotLine(x + 90, y + 21, 200);
     }
     bitmap.drawBitmap(res.weather_icons[data.icon], x + 12, y + 21);
     bitmap.drawText(res.font.white_18, day, x + 15, y + 2);
 
-    bitmap.drawBitmap(res.icons.arrow_down_black, x + 4, y + 87);
-    bitmap.drawText(res.font.black_18, '' + data.min_temp + ' °', x + 18, y + 85);
+    bitmap.drawBitmap(res.icons.arrow_down_black, x + 6, y + 85);
+    bitmap.drawText(res.font.black_18, '' + data.min_temp + '°', x + 21, y + 85);
 
-    bitmap.drawBitmap(res.icons.arrow_top_red, x + 47, y + 87);
-    bitmap.drawText(res.font.red_18, '' + data.max_temp + ' °', x + 61, y + 85);
+    bitmap.drawBitmap(res.icons.arrow_top_red, x + 48, y + 90);
+    bitmap.drawText(res.font.red_18, '' + data.max_temp + '°', x + 62, y + 85);
 
     /*let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
     bitmap.drawBitmap(wind_icon,x+5,y+100);*/
@@ -148,10 +148,10 @@ function imageGenerator(opt) {
     
     
     if (data.precip_prob > 0 && (data.rain_qty > 0 || data.snow_qty > 0 ) ) {
-      let horizLineWidth = isSunday? 90 : 88;
+      let horizLineWidth = isSunday? 90 : 89;
       drawHorizDotLine(x+1,  y + 130, horizLineWidth);
       
-      drawPercentBar(data.precip_prob, x + 22,  y + 138, 50, 5, data.precip_prob >= 0.8);
+      drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
       
       if (data.rain_qty > 0) {
         bitmap.drawBitmap(res.icons.rain, x + 5,  y + 142 );
@@ -168,7 +168,7 @@ function imageGenerator(opt) {
     
     if(data.predictability) {
        bitmap.drawBitmap(res.icons.predic, x + 5,  y + 175);
-       drawPercentBar(data.predictability, x + 25,  y + 175, 50, 15, data.predictability < 0.5);
+       drawPercentBar(data.predictability, x + 25,  y + 175, 55, 15, data.predictability < 0.5);
     }
     
     return colWidth;
@@ -216,7 +216,7 @@ function imageGenerator(opt) {
     bitmap.drawBitmap(res.icons.arrow_down_black, 20, 82);
     bitmap.drawText(res.font.black_18, '' + temp_min + ' °', 35, 82);
 
-    bitmap.drawBitmap(res.icons.arrow_top_red, 90, 86);
+    bitmap.drawBitmap(res.icons.arrow_top_red, 90, 87);
     bitmap.drawText(res.font.red_18, '' + temp_max + ' °', 105, 82);
 
   }
@@ -228,9 +228,9 @@ function imageGenerator(opt) {
     bitmap.drawText(res.font.black_18, "°", x + 75, 27);
 
     //temp minmax
-    bitmap.drawBitmap(res.icons.arrow_top_red, x + 95, 28);
+    bitmap.drawBitmap(res.icons.arrow_top_red, x + 95, 31);
     bitmap.drawText(res.font.red_18, '' + temp_max + ' °', x + 112, 26);
-    bitmap.drawBitmap(res.icons.arrow_down_black, x + 95, 45);
+    bitmap.drawBitmap(res.icons.arrow_down_black, x + 95, 43);
     bitmap.drawText(res.font.black_18, '' + temp_min + ' °', x + 112, 43);
 
 
@@ -289,18 +289,19 @@ function imageGenerator(opt) {
   }
 
   function drawPercentBar(percent, left, top, width, height, is_red) {
-    bitmap.drawFilledRect(left, top, width, 1, color.black, color.black);
-    bitmap.drawFilledRect(left, top + height , width, 1, color.black, color.black);
-    bitmap.drawFilledRect(left, top, 1, height, color.black, color.black);
-    bitmap.drawFilledRect(left + width, top, 1, height, color.black, color.black);
+    bitmap.drawFilledRect(left + 1, top, width - 2, 1, color.black, color.black);
+    bitmap.drawFilledRect(left + 1, top + height - 1 , width - 2, 1, color.black, color.black);
+    
+    bitmap.drawFilledRect(left, top +1 , 1, height - 2, color.black, color.black);
+    bitmap.drawFilledRect(left + width -1, top +1, 1, height - 2, color.black, color.black);
     
     let inside_color = color.black;
     if(is_red) {
       inside_color = color.red;
     }
     
-    for (let i = 1; i<height; i++) {
-      bitmap.drawFilledRect(left +1, top + i, parseFloat(width-1) * percent , 1, inside_color, inside_color);
+    for (let i = 1; i < height - 1; i++) {
+      bitmap.drawFilledRect(left +1, top + i, parseFloat(width-2) * percent , 1, inside_color, inside_color);
     }
   }
   
