@@ -59,6 +59,8 @@ function wsMeteoblue(opt) {
 				logger.debug('update wind',weatherObj.days[i].wind, '->',  wind);
 				weatherObj.days[i].wind = wind;
 				
+				//windir seems inaccurate... keep it from darksky
+				/*
 				let wind_css_class = $(this).find('.data .wind .glyph').attr('class');
 				let regex_windir = /.*(N|E|S|W|NE|NW|SE|SW)$/gm.exec(wind_css_class);
 				if (regex_windir) {
@@ -67,7 +69,7 @@ function wsMeteoblue(opt) {
 					weatherObj.days[i].wind_dir = wind_dir;	
 				} else {
 					logger.warn('invalid win dir. Css class', wind_css_class);
-				}
+				}*/
 				
 				/*let tab_rain = $(this).find('.data .tab_precip').text().replace('mm', '').replace('cm', '').trim().split('-');
 				day_data.rain_min = 0;
@@ -120,10 +122,11 @@ function wsMeteoblue(opt) {
 			case 7:
 			case 14:
 			case 16:
-			case 11:
 				return 'rain_sun';
 			case 8:
 				return 'tstorm';
+			case 11:
+				return 'rain_snow';
 			case 9:
 			case 10:
 			case 13:

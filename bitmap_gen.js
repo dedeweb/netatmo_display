@@ -362,6 +362,7 @@ function imageGenerator(opt) {
     res.weather_icons.partly_cloudy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/partlysunny.bmp'));
     res.weather_icons.mostly_sunny = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/mostly_sunny.bmp'));
     res.weather_icons.rain_sun = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain_sun.bmp'));
+    res.weather_icons.rain_snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain_snow.bmp'));
     res.weather_icons.light_rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/light_rain.bmp'));
     res.weather_icons.tstorm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/tstorm.bmp'));
     res.weather_icons.unknown = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/unknown.bmp'));
