@@ -145,9 +145,11 @@ function imageGenerator(opt) {
     //bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
     
 
-   
+    
+    
     if (data.precip_prob > 0 && (data.rain_qty > 0 || data.snow_qty > 0 ) ) {
-      drawHorizDotLine(x,  y + 130, 89);
+      let horizLineWidth = isSunday? 90 : 88;
+      drawHorizDotLine(x+1,  y + 130, horizLineWidth);
       
       drawPercentBar(data.precip_prob, x + 22,  y + 138, 50, 5, data.precip_prob >= 0.8);
       
@@ -161,7 +163,7 @@ function imageGenerator(opt) {
         bitmap.drawBitmap(res.icons.cm, x + 45, y + 147);
       }  
       
-      drawHorizDotLine(x,  y + 165, 89);
+      drawHorizDotLine(x+1,  y + 165, horizLineWidth);
     }
     
     if(data.predictability) {
@@ -303,7 +305,7 @@ function imageGenerator(opt) {
   }
   
   function loadRes() {
-    logger.info('loading bitmap and fonts');
+    logger.info('loading bitmaps and fonts');
     res.font = {};
 
     res.font.white_18 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
