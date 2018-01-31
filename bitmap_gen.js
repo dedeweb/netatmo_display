@@ -128,6 +128,7 @@ function imageGenerator(opt) {
       bitmap.drawFilledRect(x + 90, y, 2, 21, color.white, color.white);
       drawDotLine(x + 90, y + 21, 200);
     }
+    
     bitmap.drawBitmap(res.weather_icons[data.icon], x + 12, y + 21);
     bitmap.drawText(res.font.white_18, day, x + 15, y + 2);
 
@@ -364,6 +365,8 @@ function imageGenerator(opt) {
     res.weather_icons.mostly_sunny = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/mostly_sunny.bmp'));
     res.weather_icons.rain_sun = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain_sun.bmp'));
     res.weather_icons.rain_snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain_snow.bmp'));
+    res.weather_icons.snow_sun = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/snow_sun.bmp'));
+    res.weather_icons.light_snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/light_snow.bmp'));
     res.weather_icons.light_rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/light_rain.bmp'));
     res.weather_icons.tstorm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/tstorm.bmp'));
     res.weather_icons.unknown = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/unknown.bmp'));

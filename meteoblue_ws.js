@@ -125,13 +125,15 @@ function wsMeteoblue(opt) {
 				return 'rain_sun';
 			case 8:
 				return 'tstorm';
-			case 11:
-				return 'rain_snow';
-			case 9:
 			case 10:
-			case 13:
 			case 15:
 			case 17:
+				return 'snow_sun';
+			case 11:
+				return 'rain_snow';
+			case 13:
+				return 'light_snow';
+			case 9:
 				return 'snow';
 			case 12:
 				return 'light_rain';
