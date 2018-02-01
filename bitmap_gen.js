@@ -128,15 +128,15 @@ function imageGenerator(opt) {
       bitmap.drawFilledRect(x + 90, y, 2, 21, color.white, color.white);
       drawDotLine(x + 90, y + 21, 200);
     }
-    
-    bitmap.drawBitmap(res.weather_icons[data.icon], x + 12, y + 21);
+
+    bitmap.drawBitmap(res.weather_icons[data.icon], x + 12, y + 23);
     bitmap.drawText(res.font.white_18, day, x + 15, y + 2);
 
-    bitmap.drawBitmap(res.icons.arrow_down_black, x + 6, y + 85);
-    bitmap.drawText(res.font.black_18, '' + data.min_temp + '°', x + 21, y + 85);
+    bitmap.drawBitmap(res.icons.arrow_down_black, x + 6, y + 87);
+    bitmap.drawText(res.font.black_18, '' + data.min_temp + '°', x + 21, y + 87);
 
-    bitmap.drawBitmap(res.icons.arrow_top_red, x + 48, y + 90);
-    bitmap.drawText(res.font.red_18, '' + data.max_temp + '°', x + 62, y + 85);
+    bitmap.drawBitmap(res.icons.arrow_top_red, x + 48, y + 92);
+    bitmap.drawText(res.font.red_18, '' + data.max_temp + '°', x + 62, y + 87);
 
     /*let wind_icon = bmp_lib.BMPBitmap.fromFile("glyph/wind.bmp");
     bitmap.drawBitmap(wind_icon,x+5,y+100);*/
