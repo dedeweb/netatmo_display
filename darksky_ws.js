@@ -52,8 +52,13 @@ function wsDarksky(opt) {
         dayObj.wind = Math.round(dsData.windGust);
         dayObj.wind_dir = bearingToDir(dsData.windBearing);
         dayObj.precip_prob = dsData.precipProbability;
-        dayObj.rain_qty = Math.round(dsData.precipIntensity * 24);
-        dayObj.snow_qty = Math.round(dsData.precipAccumulation);
+        if (dsData.precipType == 'rain') {
+          dayObj.rain_qty = Math.round(dsData.precipIntensity * 24);  
+        }
+        if (dsData.precipType == 'snow') {
+          dayObj.snow_qty = Math.round(dsData.precipAccumulation);  
+        }
+        
       }
       weatherObj.days.push(dayObj);
     }

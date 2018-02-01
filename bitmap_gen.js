@@ -154,15 +154,15 @@ function imageGenerator(opt) {
       
       drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
 
-      if (data.rain_qty > 0) {
+      if (data.snow_qty > 0) {
+        bitmap.drawBitmap(res.icons.snow, x + 5, y + 141);
+        bitmap.drawTextRight(res.font.black_18, data.snow_qty + '' , x + 40,y + 147);
+        bitmap.drawBitmap(res.icons.cm, x + 45, y + 147);
+      }  else if (data.rain_qty > 0) {
         bitmap.drawBitmap(res.icons.rain, x + 5,  y + 142 );
         bitmap.drawTextRight(res.font.black_18, data.rain_qty + '' , x + 40,  y + 147);
         bitmap.drawBitmap(res.icons.mm, x + 45,y + 147);
-      } else if (data.snow_qty > 0) {
-        bitmap.drawBitmap(res.icons.snow, x + 3, y + 142);
-        bitmap.drawTextRight(res.font.black_18, data.snow_qty + '' , x + 40,y + 147);
-        bitmap.drawBitmap(res.icons.cm, x + 45, y + 147);
-      }  
+      }
       
       drawHorizDotLine(x+1,  y + 165, horizLineWidth);
     }
