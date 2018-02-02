@@ -27,8 +27,9 @@ const trigger_hum = 5;
 
 const morning_hour = 6; //trigger on ext. temp only after this hour. 
 
-//forecast update times
-const forecast_update_times = ['06:00:00', '08:30:00', '18:30:00', '20:30:00']
+//forecast update times 
+//for meteoblue : https://content.meteoblue.com/en/research-development/data-sources/weather-modelling/model-run
+const forecast_update_times = ['06:00:00', '08:15:00 00Z', '18:30:00', '20:15:00 00Z']
 
 var logger = new(winston.Logger)({
 	transports: [
@@ -280,16 +281,16 @@ function shouldUpdateForecast() {
 		let afterDate = null;
 
 		if (i < 0) {
-			beforeDate = moment(forecast_update_times[forecast_update_times.length - 1], 'HH:mm:ss').subtract(1, 'd');
+			beforeDate = moment(forecast_update_times[forecast_update_times.length - 1], 'HH:mm:ss Z').subtract(1, 'd');
 		} else {
-			beforeDate = moment(forecast_update_times[i], 'HH:mm:ss');
+			beforeDate = moment(forecast_update_times[i], 'HH:mm:ss Z');
 		}
 
 		if (i + 1 > forecast_update_times.length - 1) {
 			//add one day 
-			afterDate = moment(forecast_update_times[0], 'HH:mm:ss').add(1, 'd');
+			afterDate = moment(forecast_update_times[0], 'HH:mm:ss Z').add(1, 'd');
 		} else {
-			afterDate = moment(forecast_update_times[i + 1], 'HH:mm:ss');
+			afterDate = moment(forecast_update_times[i + 1], 'HH:mm:ss Z');
 		}
 
 		logger.debug('index', i, 'between', beforeDate.format(), 'and', afterDate.format());
