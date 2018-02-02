@@ -28,7 +28,7 @@ const trigger_hum = 5;
 const morning_hour = 6; //trigger on ext. temp only after this hour. 
 
 //forecast update times
-const forecast_update_times = ['06:00:00', '18:30:00']
+const forecast_update_times = ['06:00:00', '08:30:00', '18:30:00', '20:30:00']
 
 var logger = new(winston.Logger)({
 	transports: [
