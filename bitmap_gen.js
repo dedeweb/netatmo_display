@@ -211,8 +211,11 @@ function imageGenerator(opt) {
     } else if (temp_trend === 'stable') {
       trendIcon = res.icons.arrow_right_black;
     }
-
-    bitmap.drawBitmap(trendIcon, 125, 55);
+    
+    if (trendIcon) {
+      bitmap.drawBitmap(trendIcon, 125, 55);  
+    }
+    
 
     bitmap.drawBitmap(res.icons.arrow_down_black, 20, 82);
     bitmap.drawText(res.font.black_18, '' + temp_min + ' °', 35, 82);
