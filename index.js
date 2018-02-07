@@ -154,6 +154,7 @@ function refresh(triggerNextUpdate) {
 					if (refreshing) {
 						throw 'already_refreshing';
 					}
+					addNoiseToTab(data_netatmo.salon.noise);
 					if (!shouldUpdate(previous_data, data_netatmo)) {
 						throw 'no_changes';
 					}
@@ -461,8 +462,6 @@ function getDataFromNetatmo() {
 		let capt_bureau = _.find(devices.modules, {
 			_id: '03:00:00:05:df:d2'
 		});
-		
-		addNoiseToTab(devices.dashboard_data.Noise);
 
 		return {
 			last_store_time: devices.last_status_store,
