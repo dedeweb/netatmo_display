@@ -43,6 +43,7 @@ var logger = new(winston.Logger)({
 			humanReadableUnhandledException: true,
 		}),
 		new winston.transports.File({
+			name: 'file#info',
 			level: 'info',
 			colorize: false,
 			timestamp: function() {
@@ -50,6 +51,21 @@ var logger = new(winston.Logger)({
 			},
 			json: false,
 			filename: path.join(__dirname, 'logs', 'log.log'),
+			handleExceptions: true,
+			humanReadableUnhandledException: true,
+			maxsize: 1000000,
+			maxFiles: 5,
+			tailable: true
+		}),
+		new winston.transports.File({
+			name: 'file#error',
+			level: 'error',
+			colorize: false,
+			timestamp: function() {
+				return moment().format('YYYY-MM-DD HH:mm:ss');
+			},
+			json: false,
+			filename: path.join(__dirname, 'logs', 'error.log'),
 			handleExceptions: true,
 			humanReadableUnhandledException: true,
 			maxsize: 1000000,

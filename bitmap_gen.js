@@ -200,8 +200,14 @@ function imageGenerator(opt) {
 
   function drawFirstCol(temp, temp_trend, temp_min, temp_max) {
 
-    bitmap.drawTextRight(res.font.black_55, '' + temp, 115, 25);
-    bitmap.drawBitmap(res.icons.deg, 123, 35);
+    if (temp < 3) {
+      bitmap.drawTextRight(res.font.red_55, '' + temp, 115, 25);
+      bitmap.drawBitmap(res.icons.deg_red, 123, 35);
+    } else {
+      bitmap.drawTextRight(res.font.black_55, '' + temp, 115, 25);
+      bitmap.drawBitmap(res.icons.deg, 123, 35);
+    }
+   
 
     let trendIcon = null;
     if (temp_trend === 'up') {
@@ -328,6 +334,10 @@ function imageGenerator(opt) {
     res.font.black_55 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
     res.font.black_55.setSize(55);
     res.font.black_55.setColor(color.black);
+    
+    res.font.red_55 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+    res.font.red_55.setSize(55);
+    res.font.red_55.setColor(color.red);
 
     res.font.black_36 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
     res.font.black_36.setSize(36);
@@ -345,6 +355,7 @@ function imageGenerator(opt) {
     res.icons.sunrise = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));
     res.icons.sunset = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunset.bmp'));
     res.icons.deg = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg.bmp'));
+    res.icons.deg_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg_red.bmp'));
     res.icons.predic = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/predic.bmp'));
 
     res.windir_icons = {};
