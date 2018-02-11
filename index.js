@@ -11,7 +11,7 @@ const PROD = !fs.existsSync(path.join(__dirname, 'debug'));
 
 
 const cmdTimeout = 70000;
-const retry_before_reboot = 5;
+const retry_before_reboot = 3;
 const outputFile = path.join(__dirname, 'out.bmp');
 
 //warning values
@@ -228,7 +228,7 @@ function refresh(triggerNextUpdate) {
 				if(fail_count >= retry_before_reboot ) {
 					logger.warn('too much fails, rebooting');
 					if(PROD) {
-						exec('reboot', function (msg) {
+						exec('/sbin/reboot', function (msg) {
 							logger.info(msg);
 						});
 					}
