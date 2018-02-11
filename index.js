@@ -4,12 +4,14 @@ const request = require('request-promise');
 const _ = require('lodash');
 const moment = require('moment');moment.locale('fr');
 const spawn = require('child-process-promise').spawn;
+const exec = require('child_process').exec;
 const winston = require('winston');
 const fs = require('fs');
 const PROD = !fs.existsSync(path.join(__dirname, 'debug'));
 
 
 const cmdTimeout = 70000;
+const retry_before_reboot = 5;
 const outputFile = path.join(__dirname, 'out.bmp');
 
 //warning values
@@ -105,6 +107,7 @@ var last_darksky_update = null;
 var noise_values = [];
 var noise_avg_prev = 0;
 var noise_avg_curr = 0;
+var fail_count = 0;
 
 
 
@@ -181,7 +184,7 @@ function refresh(triggerNextUpdate) {
 					logger.warn('Manual update : do not set trigger');
 				}
 				refreshing = true;
-
+				fail_count = 0;
 				if (shouldUpdateForecast()) {
 					logger.info('updating forecast...');
 					return darksky_ws.getData().then(function(data_darksky) {
@@ -218,7 +221,18 @@ function refresh(triggerNextUpdate) {
 			} else if (error === 'no_changes') {
 				logger.warn('no significant changes, no screen update. ');
 			} else {
-				logger.error('unexpected error', error);
+				fail_count++;
+				logger.error('unexpected error (', fail_count, 'times)');
+				logger.error(error);
+				
+				if(fail_count >= retry_before_reboot ) {
+					logger.warn('too much fails, rebooting');
+					if(PROD) {
+						exec('reboot', function (msg) {
+							logger.info(msg);
+						});
+					}
+				}
 			}
 		})
 		.finally(function() {
