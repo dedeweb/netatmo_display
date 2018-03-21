@@ -243,11 +243,17 @@ function imageGenerator(opt) {
     //hum = 70;
     //hum
     if (hum_warning) {
-      bitmap.drawFilledRect(x + 1, 66, 158, 40, null, color.red);
+      //bitmap.drawFilledRect(x + 1, 66, 158, 40, null, color.red);
+      bitmap.drawFilledRect(x + 2, 67, 156, 38, color.red, color.white);
+      bitmap.drawFilledRect(x + 3, 68, 154, 36, color.red, color.white);
+      bitmap.drawTextRight(res.font.red_36, '' + hum, x + 90, 70);
+      bitmap.drawText(res.font.red_18, "%", x + 95, 72);
       // bitmap.drawFilledRect(x + 1, 66, 158, 43, null, color.red);
+    } else {
+      bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 70);
+      bitmap.drawText(res.font.black_18, "%", x + 95, 72);  
     }
-    bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 70);
-    bitmap.drawText(res.font.black_18, "%", x + 95, 72);
+    
     //co2 = 1200;
     //co2
     if (co2_warning) {
@@ -356,6 +362,10 @@ function imageGenerator(opt) {
     res.font.black_36 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
     res.font.black_36.setSize(36);
     res.font.black_36.setColor(color.black);
+    
+    res.font.red_36 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
+    res.font.red_36.setSize(36);
+    res.font.red_36.setColor(color.red);
 
     res.icons = {};
     res.icons.arrow_down_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_down_black.bmp'));
