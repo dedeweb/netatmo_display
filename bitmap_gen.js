@@ -257,20 +257,30 @@ function imageGenerator(opt) {
     //co2 = 1200;
     //co2
     if (co2_warning) {
-      bitmap.drawFilledRect(x + 1, 106, 158, 38, null, color.red);
+      bitmap.drawFilledRect(x + 2, 107, 156, 36, color.red, color.white);
+      bitmap.drawFilledRect(x + 3, 108, 154, 34, color.red, color.white);
       // bitmap.drawFilledRect(x + 1, 107, 158, 38, null, color.red);
-    }
-    bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 108);
-    bitmap.drawText(res.font.black_18, "ppm", x + 95, 110);
+      bitmap.drawTextRight(res.font.red_36, '' + co2, x + 90, 108);
+      bitmap.drawText(res.font.red_18, "ppm", x + 95, 110);
 
+    } else {
+      bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 108);
+      bitmap.drawText(res.font.black_18, "ppm", x + 95, 110);  
+    }
+    
     //noise
     if (noise) {
       if (noise_warning) {
-        bitmap.drawFilledRect(x+1, 144, 158,39, null, color.red);
+        bitmap.drawFilledRect(x+2, 145, 156,37, color.red, color.white);
+        bitmap.drawFilledRect(x+3, 146, 154,35, color.red, color.white);
         //bitmap.drawFilledRect(x + 1, 143, 158, 40, null, color.red);
+        bitmap.drawTextRight(res.font.red_36, '' + noise, x + 90, 145);
+        bitmap.drawText(res.font.red_18, "dB", x + 95, 147);
+      } else {
+        bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 145);
+        bitmap.drawText(res.font.black_18, "dB", x + 95, 147);  
       }
-      bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 145);
-      bitmap.drawText(res.font.black_18, "dB", x + 95, 147);
+      
     }
   }
 
