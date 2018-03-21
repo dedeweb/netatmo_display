@@ -243,7 +243,7 @@ function imageGenerator(opt) {
     //hum = 70;
     //hum
     if (hum_warning) {
-      drawDotBox(x + 1, 66, 158, 40, color.red);
+      bitmap.drawFilledRect(x + 1, 66, 158, 40, null, color.red);
       // bitmap.drawFilledRect(x + 1, 66, 158, 43, null, color.red);
     }
     bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 70);
@@ -251,7 +251,7 @@ function imageGenerator(opt) {
     //co2 = 1200;
     //co2
     if (co2_warning) {
-      drawDotBox(x + 1, 106, 158, 38, color.red);
+      bitmap.drawFilledRect(x + 1, 106, 158, 38, null, color.red);
       // bitmap.drawFilledRect(x + 1, 107, 158, 38, null, color.red);
     }
     bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 108);
@@ -260,7 +260,7 @@ function imageGenerator(opt) {
     //noise
     if (noise) {
       if (noise_warning) {
-        drawDotBox(x+1, 144, 158,39, color.red);
+        bitmap.drawFilledRect(x+1, 144, 158,39, null, color.red);
         //bitmap.drawFilledRect(x + 1, 143, 158, 40, null, color.red);
       }
       bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 145);
