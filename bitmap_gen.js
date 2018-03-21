@@ -121,8 +121,10 @@ function imageGenerator(opt) {
 
     if (isSunday) {
       bitmap.drawFilledRect(x + 94, y, 2, 21, color.white, color.white);
-      drawDotLine(x + 91, y + 21, 200);
-      bitmap.drawFilledRect(x + 93, y + 21, 3, 200, color.black, color.black);
+      drawDotLine(x + 92, y + 21, 200);
+      drawDotLine(x + 94, y + 21, 200);
+      //drawDotLine(x + 95, y + 21, 200);
+      //bitmap.drawFilledRect(x + 93, y + 21, 3, 200, color.black, color.black);
       colWidth = 95;
     } else {
       bitmap.drawFilledRect(x + 90, y, 2, 21, color.white, color.white);
@@ -241,14 +243,16 @@ function imageGenerator(opt) {
     //hum = 70;
     //hum
     if (hum_warning) {
-      bitmap.drawFilledRect(x + 1, 66, 158, 43, null, color.red);
+      drawDotBox(x + 1, 66, 158, 40, color.red);
+      // bitmap.drawFilledRect(x + 1, 66, 158, 43, null, color.red);
     }
     bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 70);
     bitmap.drawText(res.font.black_18, "%", x + 95, 72);
     //co2 = 1200;
     //co2
     if (co2_warning) {
-      bitmap.drawFilledRect(x + 1, 107, 158, 38, null, color.red);
+      drawDotBox(x + 1, 106, 158, 38, color.red);
+      // bitmap.drawFilledRect(x + 1, 107, 158, 38, null, color.red);
     }
     bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 108);
     bitmap.drawText(res.font.black_18, "ppm", x + 95, 110);
@@ -256,7 +260,8 @@ function imageGenerator(opt) {
     //noise
     if (noise) {
       if (noise_warning) {
-        bitmap.drawFilledRect(x + 1, 143, 158, 40, null, color.red);
+        drawDotBox(x+1, 144, 158,39, color.red);
+        //bitmap.drawFilledRect(x + 1, 143, 158, 40, null, color.red);
       }
       bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 145);
       bitmap.drawText(res.font.black_18, "dB", x + 95, 147);
@@ -290,6 +295,25 @@ function imageGenerator(opt) {
       }
       pixon = !pixon;
     }
+  }
+  
+  function drawDotBox(left, top, width, height, fillcolor) {
+    var pixon = true;
+    var firstpixon = true;
+    
+    for (var x=left; x < left + width; x++) {
+      pixon = firstpixon;
+      for (var y=top; y < top + height; y++) {
+        if(pixon) {
+          bitmap.setPixel(x,y, fillcolor);
+        } else {
+          bitmap.setPixel(x,y, color.white);
+        }
+        pixon = !pixon;
+      }
+      firstpixon = !firstpixon;
+    }
+    
   }
 
   function drawPercentBar(percent, left, top, width, height, is_red) {
