@@ -151,7 +151,7 @@ function imageGenerator(opt) {
     
     
     if (data.precip_prob > 0 && (data.rain_qty > 0 || data.snow_qty > 0 ) ) {
-      let horizLineWidth = isSunday? 90 : 89;
+      let horizLineWidth = isSunday? 91 : 89;
       drawHorizDotLine(x+1,  y + 130, horizLineWidth);
       
       drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
