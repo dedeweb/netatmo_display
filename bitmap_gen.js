@@ -90,7 +90,7 @@ function imageGenerator(opt) {
 
     if (data_forecast) {
       bitmap.drawFilledRect(0, 183, 640, 20, color.black, color.black);
-      bitmap.drawFilledRect(0, 203, 640, 1, color.red, null);
+      // bitmap.drawFilledRect(0, 203, 640, 1, color.red, null);
       drawEphemerides(data_forecast.sunrise, data_forecast.sunset);
       let xInc = 0;
       for (let i = 0; i < 7; i++) {
@@ -121,14 +121,14 @@ function imageGenerator(opt) {
 
     if (isSunday) {
       bitmap.drawFilledRect(x + 94, y, 2, 21, color.white, color.white);
-      drawDotLine(x + 92, y + 21, 200);
-      drawDotLine(x + 94, y + 21, 200);
+      drawDotLine(x + 92, y + 20, 200);
+      drawDotLine(x + 94, y + 20, 200);
       //drawDotLine(x + 95, y + 21, 200);
       //bitmap.drawFilledRect(x + 93, y + 21, 3, 200, color.black, color.black);
       colWidth = 95;
     } else {
       bitmap.drawFilledRect(x + 90, y, 2, 21, color.white, color.white);
-      drawDotLine(x + 90, y + 21, 200);
+      drawDotLine(x + 90, y + 20, 200);
     }
 
     bitmap.drawBitmap(res.weather_icons[data.icon], x + 12, y + 23);
@@ -187,7 +187,7 @@ function imageGenerator(opt) {
     bitmap.drawFilledRect(161, 0, 158, 20, color.black, color.black);
     bitmap.drawFilledRect(321, 0, 158, 20, color.black, color.black);
     bitmap.drawFilledRect(481, 0, 159, 20, color.black, color.black);
-    bitmap.drawFilledRect(0, 20, 640, 1, color.red, null);
+    // bitmap.drawFilledRect(0, 20, 640, 1, color.red, null);
     drawHorizDotLine(160, 65, 480);
     drawHorizDotLine(0, 105, 160);
     drawDotLine(159, 20, 163);
