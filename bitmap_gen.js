@@ -244,41 +244,44 @@ function imageGenerator(opt) {
     //hum
     if (hum_warning) {
       //bitmap.drawFilledRect(x + 1, 66, 158, 40, null, color.red);
-      bitmap.drawFilledRect(x + 2, 67, 156, 38, color.red, color.white);
-      bitmap.drawFilledRect(x + 3, 68, 154, 36, color.red, color.white);
-      bitmap.drawTextRight(res.font.red_36, '' + hum, x + 90, 70);
-      bitmap.drawText(res.font.red_18, "%", x + 95, 72);
+      drawRoundedBox(x + 2, 67, 156, 37, color.red);
+      //bitmap.drawFilledRect(x + 2, 67, 156, 38, color.red, color.white);
+      //bitmap.drawFilledRect(x + 3, 68, 154, 36, color.red, color.white);
+      bitmap.drawTextRight(res.font.red_36, '' + hum, x + 90, 68);
+      bitmap.drawText(res.font.red_18, "%", x + 95, 71);
       // bitmap.drawFilledRect(x + 1, 66, 158, 43, null, color.red);
     } else {
-      bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 70);
-      bitmap.drawText(res.font.black_18, "%", x + 95, 72);  
+      bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 68);
+      bitmap.drawText(res.font.black_18, "%", x + 95, 71);  
     }
     
     //co2 = 1200;
     //co2
     if (co2_warning) {
-      bitmap.drawFilledRect(x + 2, 107, 156, 36, color.red, color.white);
-      bitmap.drawFilledRect(x + 3, 108, 154, 34, color.red, color.white);
+      drawRoundedBox(x + 2, 106, 156, 37, color.red);
+      //bitmap.drawFilledRect(x + 2, 107, 156, 36, color.red, color.white);
+      //bitmap.drawFilledRect(x + 3, 108, 154, 34, color.red, color.white);
       // bitmap.drawFilledRect(x + 1, 107, 158, 38, null, color.red);
-      bitmap.drawTextRight(res.font.red_36, '' + co2, x + 90, 108);
-      bitmap.drawText(res.font.red_18, "ppm", x + 95, 110);
+      bitmap.drawTextRight(res.font.red_36, '' + co2, x + 90, 107);
+      bitmap.drawText(res.font.red_18, "ppm", x + 95, 109);
 
     } else {
-      bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 108);
-      bitmap.drawText(res.font.black_18, "ppm", x + 95, 110);  
+      bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 107);
+      bitmap.drawText(res.font.black_18, "ppm", x + 95, 109);  
     }
     
     //noise
     if (noise) {
       if (noise_warning) {
-        bitmap.drawFilledRect(x+2, 145, 156,37, color.red, color.white);
-        bitmap.drawFilledRect(x+3, 146, 154,35, color.red, color.white);
+        drawRoundedBox(x+2, 145, 156, 37, color.red);
+        //bitmap.drawFilledRect(x+2, 145, 156,37, color.red, color.white);
+        //bitmap.drawFilledRect(x+3, 146, 154,35, color.red, color.white);
         //bitmap.drawFilledRect(x + 1, 143, 158, 40, null, color.red);
-        bitmap.drawTextRight(res.font.red_36, '' + noise, x + 90, 145);
-        bitmap.drawText(res.font.red_18, "dB", x + 95, 147);
+        bitmap.drawTextRight(res.font.red_36, '' + noise, x + 90, 146);
+        bitmap.drawText(res.font.red_18, "dB", x + 95, 149);
       } else {
-        bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 145);
-        bitmap.drawText(res.font.black_18, "dB", x + 95, 147);  
+        bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 146);
+        bitmap.drawText(res.font.black_18, "dB", x + 95, 149);  
       }
       
     }
@@ -313,6 +316,42 @@ function imageGenerator(opt) {
     }
   }
   
+  function drawRoundedBox(left, top, width, height, fillcolor) {
+    bitmap.drawFilledRect(left, top, width, height, fillcolor, color.white);
+    bitmap.drawFilledRect(left +1, top + 1, width -2, height -2, fillcolor, color.white);
+    
+    //top left corner
+    bitmap.drawFilledRect(left , top , 4, 1, null, color.white);
+    bitmap.drawFilledRect(left , top , 1, 4, null, color.white);
+    bitmap.setPixel(left + 1 , top + 1 , color.white);
+    bitmap.drawFilledRect(left + 2 , top + 2 , 3, 1, null, fillcolor);
+    bitmap.drawFilledRect(left +2 , top +2, 1, 3, null, fillcolor);
+    
+    //top right corner
+    bitmap.drawFilledRect(left + width - 4, top , 4, 1, null, color.white);
+    bitmap.drawFilledRect(left + width - 1, top , 1, 4, null, color.white);
+    bitmap.setPixel(left + width - 2 , top + 1 , color.white);
+    bitmap.drawFilledRect(left + width - 5 , top + 2 , 3, 1, null, fillcolor);
+    bitmap.drawFilledRect(left + width - 3 , top + 2, 1, 3, null, fillcolor);
+    
+    //down left corner
+    bitmap.drawFilledRect(left , top + height - 1 , 4, 1, null, color.white);
+    bitmap.drawFilledRect(left , top + height - 4, 1, 4, null, color.white);
+    bitmap.setPixel(left + 1 , top + height - 2 , color.white);
+    bitmap.drawFilledRect(left + 2 ,top + height - 3 , 3, 1, null, fillcolor);
+    bitmap.drawFilledRect(left + 2 , top + height - 5, 1, 3, null, fillcolor);
+    
+    //down right corner
+    bitmap.drawFilledRect(left + width - 4 , top + height - 1 , 4, 1, null, color.white);
+    bitmap.drawFilledRect(left + width - 1 , top + height - 4, 1, 4, null, color.white);
+    bitmap.setPixel(left + width - 2 , top + height - 2 , color.white);
+    bitmap.drawFilledRect(left + width - 5, top + height - 3 , 3, 1, null, fillcolor);
+    bitmap.drawFilledRect(left + width - 3, top + height - 5, 1, 3, null, fillcolor);
+    
+    //bitmap.setPixel(left + width - 1, top + height - 1, color.white);
+  }
+  
+  /*
   function drawDotBox(left, top, width, height, fillcolor) {
     var pixon = true;
     var firstpixon = true;
@@ -331,7 +370,7 @@ function imageGenerator(opt) {
     }
     
   }
-
+  */
   function drawPercentBar(percent, left, top, width, height, is_red) {
     bitmap.drawFilledRect(left + 1, top, width - 2, 1, color.black, color.black);
     bitmap.drawFilledRect(left + 1, top + height - 1 , width - 2, 1, color.black, color.black);
