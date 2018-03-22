@@ -82,6 +82,9 @@ var logger = new(winston.Logger)({
 //load internal libs
 logger.info('======================================================');
 
+var startTime = moment();
+var refreshing = false;
+
 const led = require(path.join(__dirname, 'led'))({
 	logger: logger
 });
@@ -92,7 +95,24 @@ const darksky_ws = require(path.join(__dirname, 'darksky_ws'))({
 	logger: logger
 });
 
-var startTime = moment();
+const api_server = require(path.join(__dirname, 'api_server'))({
+	logger: logger,
+	refreshScreenCallback : function () {
+		if(refreshing) {
+			logger.warn('refresh is already in progress');
+		} else {
+			startTime = moment();
+			led.goBusyFlashing();
+			sendToScreen().then(function () {
+				led.exitBusy();	
+			});	
+		}
+	},
+	fullRefreshCallback: function() {
+		refresh(false);
+	}
+});
+
 const bmp_gen = require(path.join(__dirname, 'bitmap_gen'))({
 	logger: logger,
 	outputFile:outputFile,
@@ -100,8 +120,7 @@ const bmp_gen = require(path.join(__dirname, 'bitmap_gen'))({
 });
 logger.info('script launch after', getTimespan());
 
-//set global working vars
-var refreshing = false;
+//set global working var
 var previous_data = null;
 var last_darksky_update = null;
 var noise_values = [];
@@ -177,13 +196,13 @@ function refresh(triggerNextUpdate) {
 					if (!shouldUpdate(previous_data, data_netatmo)) {
 						throw 'no_changes';
 					}
-					previous_data = data_netatmo;
-					commitNoiseValues();
-
 				} else {
 					logger.warn('Manual update : do not set trigger');
 				}
 				refreshing = true;
+				previous_data = data_netatmo;
+				commitNoiseValues();
+				
 				fail_count = 0;
 				if (shouldUpdateForecast()) {
 					logger.info('updating forecast...');
