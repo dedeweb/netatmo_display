@@ -43,7 +43,12 @@ def drawImage(imgPath):
     print 'display image to screen'
 
     epd.display_frame(epd.get_frame_buffer(image))
+    
+    print 'go to sleep mode'
 
+    epd.sleep()
+
+    print 'done'
     # You can get frame buffer from an image or import the buffer directly:
     #epd.display_frame(imagedata.MONOCOLOR_BITMAP)
 
