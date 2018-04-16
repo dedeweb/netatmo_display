@@ -39,15 +39,14 @@ function imageGenerator(opt) {
   // private functions
   function drawImage(data_netatmo, data_forecast) {
     led.goBusy();
-
-
+    
     if (!data_forecast && fs.existsSync(outputFile)) {
       logger.info('partial refresh : refresh only netatmo data. ')
       //start from previous bmp
       bitmap = bmp_lib.BMPBitmap.fromFile(outputFile);
       // and erase netatmo part, which will be freshed. 
-      bitmap.drawFilledRect(0, 0, 640, 105, color.white, color.white);
-      bitmap.drawFilledRect(160, 105, 480, 77, color.white, color.white);
+      bitmap.drawFilledRect(0, 0, 640, 144, color.white, color.white);
+      bitmap.drawFilledRect(160, 144, 480, 38, color.white, color.white);
     } else {
       //redraw all. 
       logger.info('full refresh');
@@ -58,7 +57,7 @@ function imageGenerator(opt) {
 
     drawOutline();
 
-    drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max);
+    drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max, data_netatmo.ext.hum);
     drawCol(160,
       data_netatmo.salon.temp,
       data_netatmo.salon.hum,
@@ -106,10 +105,10 @@ function imageGenerator(opt) {
     let sunriseTxt = moment('' + sunrise, 'X').format('HH:mm');
     let sunsetTxt = moment('' + sunset, 'X').format('HH:mm');
 
-    bitmap.drawBitmap(res.icons.sunrise, 28, 123);
-    bitmap.drawText(res.font.black_18, sunriseTxt, 20, 150);
-    bitmap.drawBitmap(res.icons.sunset, 108, 123);
-    bitmap.drawText(res.font.black_18, sunsetTxt, 100, 150);
+    bitmap.drawBitmap(res.icons.sunrise, 3, 153);
+    bitmap.drawText(res.font.black_18, sunriseTxt, 30, 155);
+    bitmap.drawBitmap(res.icons.sunset, 80, 153);
+    bitmap.drawText(res.font.black_18, sunsetTxt, 110, 155);
   }
 
   function drawForecastDay(x, y, data) {
@@ -190,6 +189,7 @@ function imageGenerator(opt) {
     // bitmap.drawFilledRect(0, 20, 640, 1, color.red, null);
     drawHorizDotLine(160, 65, 480);
     drawHorizDotLine(0, 105, 160);
+    drawHorizDotLine(0, 144, 160);
     drawDotLine(159, 20, 163);
     drawDotLine(319, 20, 163);
     drawDotLine(479, 20, 140);
@@ -200,7 +200,7 @@ function imageGenerator(opt) {
     bitmap.drawText(res.font.white_18, "BUREAU", 495, 1);
   }
 
-  function drawFirstCol(temp, temp_trend, temp_min, temp_max) {
+  function drawFirstCol(temp, temp_trend, temp_min, temp_max, hum) {
 
     bitmap.drawTextRight(res.font.black_55, '' + temp, 115, 25);
     bitmap.drawBitmap(res.icons.deg, 123, 35);
@@ -224,6 +224,11 @@ function imageGenerator(opt) {
 
     bitmap.drawBitmap(res.icons.arrow_top_red, 90, 87);
     bitmap.drawText(res.font.red_18, '' + temp_max + ' °', 105, 82);
+    
+    //hum
+    bitmap.drawTextRight(res.font.black_36, '' + hum,  90, 108);
+    bitmap.drawText(res.font.black_18, "%",  95, 111);  
+    
 
   }
 
