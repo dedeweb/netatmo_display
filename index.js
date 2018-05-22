@@ -10,6 +10,7 @@ const fs = require('fs');
 const PROD = !fs.existsSync(path.join(__dirname, 'debug'));
 
 
+
 const cmdTimeout = 70000;
 const retry_before_reboot = 3;
 const outputFile = path.join(__dirname, 'out.bmp');
@@ -76,6 +77,14 @@ var logger = new(winston.Logger)({
 		})
 	]
 });
+
+//load auth data
+if(!fs.existsSync(path.join(__dirname, 'auth.json'))) {
+  throw 'auth file not found, cannot continue.';
+}
+const authData = JSON.parse(fs.readFileSync(path.join(__dirname, 'auth.json'), 'utf8'));
+
+
 
 
 //=========================================================================================
@@ -487,13 +496,7 @@ function getDataFromNetatmo() {
 	return request({
 		method: 'POST',
 		uri: 'https://api.netatmo.com/oauth2/token',
-		form: {
-			client_id: "5a1590ee2d3e04e0fe8b4e68",
-			client_secret: "61xilx6nGiX4LcE8JXeocsLhLV",
-			username: "denis.messie+netatmoapp@gmail.com",
-			password: "{S)[#X7NT/a'rrWG",
-			grant_type: 'password'
-		}
+		form:  Object.assign({ grant_type: 'password' }, authData)   
 	}).then(function(data) {
 		accessToken = JSON.parse(data).access_token;
 		return request({
