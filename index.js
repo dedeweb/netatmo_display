@@ -493,10 +493,12 @@ function shouldUpdateNoise(lastVal, newVal) {
 
 function getDataFromNetatmo() {
 	let accessToken = '';
-	return request({
+  let formData =  Object.assign({ grant_type: 'password' }, authData.netatmo);
+
+  return request({
 		method: 'POST',
 		uri: 'https://api.netatmo.com/oauth2/token',
-		form:  Object.assign({ grant_type: 'password' }, authData)   
+		form:  formData   
 	}).then(function(data) {
 		accessToken = JSON.parse(data).access_token;
 		return request({
