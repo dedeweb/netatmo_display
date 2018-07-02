@@ -288,7 +288,7 @@ function sendToScreen() {
 	logger.info('spawning python command');
 	let promiseSpawn;
 	if (PROD) {
-		promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py'), outputFile]);
+		promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py'), outputFile, 30]);
 	} else {
 		logger.warn('Debug mode, no real display ! ');
 		promiseSpawn = spawn('sh', [path.join(__dirname, 'fake_disp.sh')]);
