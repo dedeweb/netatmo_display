@@ -9,6 +9,10 @@ const winston = require('winston');
 const fs = require('fs');
 const PROD = !fs.existsSync(path.join(__dirname, 'debug'));
 
+//vcom values : 0-255
+const vcom_normal = 30;
+const vcom_hot = 80;
+
 
 
 const cmdTimeout = 70000;
@@ -112,7 +116,7 @@ const api_server = require(path.join(__dirname, 'api_server'))({
 		} else {
 			startTime = moment();
 			led.goBusyFlashing();
-			sendToScreen().then(function () {
+			sendToScreen(vcom_normal).then(function () {
 				led.exitBusy();	
 			});	
 		}
@@ -221,25 +225,32 @@ function refresh(triggerNextUpdate) {
 						return meteoblue_ws.getData(data_darksky).then(function(data_meteoblue) {
 							logger.info('meteoblue data received after', getTimespan());
 							bmp_gen.drawImage(data_netatmo, data_meteoblue);
+              return getVcomFromTemp(data_netatmo.salon.temp);
 						}).catch(function(e) {
 							logger.warn('cannot load data from meteoblue');
 							logger.warn(e);
 							bmp_gen.drawImage(data_netatmo, data_darksky);
+              return getVcomFromTemp(data_netatmo.salon.temp);
 						});
 					}).catch(function(e) {
 						logger.error('error getting forecast ! ', e);
 						bmp_gen.drawImage(data_netatmo, null);
+            return getVcomFromTemp(data_netatmo.salon.temp);
 					});
 				} else {
 					logger.info('no need to refresh forecast.');
 					bmp_gen.drawImage(data_netatmo, null);
+          return getVcomFromTemp(data_netatmo.salon.temp);
 				}
 			} else {
 				logger.error('no netatmo data :(');
 			}
-		}).then(function() {
+		}).then(function(vcom) {
+      if(!vcom) {
+        vcom =  vcom_normal; 
+      }
 			led.goBusyFlashing();
-			return sendToScreen();
+			return sendToScreen(vcom);
 		})
 		.catch(function(error) {
 			if (error === 'already_refreshing') {
@@ -278,17 +289,26 @@ function refresh(triggerNextUpdate) {
 
 //--------------------------------------------------------------------------
 
-function sendToScreen() {
+//in hot contition, we have to raise vcom, otherwise screen looks gray :(
+function getVcomFromTemp(temp) {
+  if(temp >= 25) {
+    return vcom_hot;
+  } 
+  return vcom_normal;
+}
+
+function sendToScreen(vcom) {
 	let timeout = new Promise((resolve, reject) => {
 		let id = setTimeout(() => {
 			resolve('command out in ' + cmdTimeout + 'ms.');
 			clearTimeout(id);
 		}, cmdTimeout);
 	});
+  logger.info('vcom is', vcom);
 	logger.info('spawning python command');
 	let promiseSpawn;
 	if (PROD) {
-		promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py'), outputFile]);
+		promiseSpawn = spawn('python', ['-u', path.join(__dirname, 'python/main.py'), outputFile, vcom]);
 	} else {
 		logger.warn('Debug mode, no real display ! ');
 		promiseSpawn = spawn('sh', [path.join(__dirname, 'fake_disp.sh')]);

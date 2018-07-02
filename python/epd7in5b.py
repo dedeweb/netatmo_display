@@ -100,7 +100,7 @@ class EPD:
         # so use [data] instead of data
         epdif.spi_transfer([data])
 
-    def init(self):
+    def init(self, vcom):
         if (epdif.epd_init() != 0):
             return -1
         self.reset()
@@ -130,7 +130,7 @@ class EPD:
         self.send_data(0x01)     #gate 384
         self.send_data(0x80)
         self.send_command(VCM_DC_SETTING)
-        self.send_data(0x1E)      #decide by LUT file
+        self.send_data(vcom)      #decide by LUT file 0x1E
         self.send_command(0xe5)           #FLASH MODE
         self.send_data(0x03)
 

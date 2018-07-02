@@ -32,13 +32,18 @@ from PIL import Image
 EPD_WIDTH = 640
 EPD_HEIGHT = 384
 
-def drawImage(imgPath):
+def drawImage(imgPath, vcom):
 
     print 'load image ' + imgPath 
     image = Image.open(imgPath)
     print 'epd init'
     epd = epd7in5b.EPD()
-    epd.init()
+    
+    hex_str = "0xAD4"
+
+
+    
+    epd.init(int(vcom))
 
     print 'display image to screen'
 
@@ -53,7 +58,7 @@ def drawImage(imgPath):
     #epd.display_frame(imagedata.MONOCOLOR_BITMAP)
 
 if __name__ == '__main__':
-    if (len(sys.argv)!= 2) : 
+    if (len(sys.argv)!= 3) : 
         print 'wrong number of arguments'
     else :
-        drawImage(sys.argv[1])
+        drawImage(sys.argv[1], sys.argv[2])
