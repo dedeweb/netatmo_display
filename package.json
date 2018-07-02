@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-   "repository": {
+  "repository": {
     "type": "git",
     "url": "git+https://github.com/dedeweb/netatmo_display.git"
   },
@@ -16,6 +16,7 @@
     "bitmap-manipulation": "^2.0.0",
     "cheerio": "^1.0.0-rc.2",
     "child-process-promise": "^2.2.1",
+    "epoll": "^2.0.1",
     "express": "^4.16.3",
     "lodash": "^4.17.4",
     "moment": "^2.19.2",
