@@ -11,7 +11,7 @@ const PROD = !fs.existsSync(path.join(__dirname, 'debug'));
 
 //vcom values : 0-255
 const vcom_normal = 30;
-const vcom_hot = 80;
+const vcom_hot = 72;
 
 
 
