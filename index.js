@@ -12,7 +12,7 @@ const PROD = !fs.existsSync(path.join(__dirname, 'debug'));
 //vcom values : 0-255
 const vcom_normal = 30;
 const vcom_hot = 72;
-
+const vcom_trigger_temp = 24.5;
 
 
 const cmdTimeout = 70000;
@@ -291,7 +291,7 @@ function refresh(triggerNextUpdate) {
 
 //in hot contition, we have to raise vcom, otherwise screen looks gray :(
 function getVcomFromTemp(temp) {
-  if(temp >= 25) {
+  if(temp >= vcom_trigger_temp) {
     return vcom_hot;
   } 
   return vcom_normal;
