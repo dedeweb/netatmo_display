@@ -537,17 +537,22 @@ function getDataFromNetatmo() {
 			_id: '03:00:00:05:df:d2'
 		});
 
-		return {
+		let returnVal =  {
 			last_store_time: devices.last_status_store,
 			time: devices.dashboard_data.time_utc,
-			ext: {
+			
+		};
+		if (capt_ext && capt_ext.dashboard_data) {
+			returnVal.ext = {
 				temp: capt_ext.dashboard_data.Temperature,
 				hum: capt_ext.dashboard_data.Humidity,
 				temp_min: capt_ext.dashboard_data.min_temp,
 				temp_max: capt_ext.dashboard_data.max_temp,
 				temp_trend: capt_ext.dashboard_data.temp_trend
-			},
-			salon: {
+			};
+		}
+		if (devices && devices.dashboard_data) {
+			returnVal.salon = {
 				temp: devices.dashboard_data.Temperature,
 				hum: devices.dashboard_data.Humidity,
 				hum_warning: isHumWarning(devices.dashboard_data.Humidity),
@@ -558,8 +563,10 @@ function getDataFromNetatmo() {
 				co2_warning: isCO2Warning(devices.dashboard_data.CO2),
 				noise: devices.dashboard_data.Noise,
 				noise_warning: isNoiseWarning(noise_avg_curr)
-			},
-			chambre: {
+			};
+		}
+		if (capt_chambre && capt_chambre.dashboard_data) {
+			returnVal.chambre = {
 				temp: capt_chambre.dashboard_data.Temperature,
 				hum: capt_chambre.dashboard_data.Humidity,
 				hum_warning: isHumWarning(capt_chambre.dashboard_data.Humidity),
@@ -568,8 +575,10 @@ function getDataFromNetatmo() {
 				temp_trend: capt_chambre.dashboard_data.temp_trend,
 				co2: capt_chambre.dashboard_data.CO2,
 				co2_warning: isCO2Warning(capt_chambre.dashboard_data.CO2)
-			},
-			bureau: {
+			};
+		}
+		if (capt_bureau && capt_bureau.dashboard_data) {
+			returnVal.bureau = {
 				temp: capt_bureau.dashboard_data.Temperature,
 				hum: capt_bureau.dashboard_data.Humidity,
 				hum_warning: isHumWarning(capt_bureau.dashboard_data.Humidity),
@@ -578,8 +587,11 @@ function getDataFromNetatmo() {
 				temp_trend: capt_bureau.dashboard_data.temp_trend,
 				co2: capt_bureau.dashboard_data.CO2,
 				co2_warning: isCO2Warning(capt_bureau.dashboard_data.CO2)
-			}
+			};
 		}
+		
+
+		return returnVal;
 	});
 }
 

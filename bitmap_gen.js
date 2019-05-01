@@ -53,37 +53,46 @@ function imageGenerator(opt) {
       bitmap.clear(color.white);
     }
 
-
-
     drawOutline();
+    if (data_netatmo.ext) {
+      drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max, data_netatmo.ext.hum);
+    }
+    
+    if (data_netatmo.salon) {
+      drawCol(160,
+        data_netatmo.salon.temp,
+        data_netatmo.salon.hum,
+        data_netatmo.salon.hum_warning,
+        data_netatmo.salon.co2,
+        data_netatmo.salon.co2_warning,
+        data_netatmo.salon.temp_min,
+        data_netatmo.salon.temp_max,
+        data_netatmo.salon.noise,
+        data_netatmo.salon.noise_warning);
+    }
 
-    drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max, data_netatmo.ext.hum);
-    drawCol(160,
-      data_netatmo.salon.temp,
-      data_netatmo.salon.hum,
-      data_netatmo.salon.hum_warning,
-      data_netatmo.salon.co2,
-      data_netatmo.salon.co2_warning,
-      data_netatmo.salon.temp_min,
-      data_netatmo.salon.temp_max,
-      data_netatmo.salon.noise,
-      data_netatmo.salon.noise_warning);
-    drawCol(320,
-      data_netatmo.chambre.temp,
-      data_netatmo.chambre.hum,
-      data_netatmo.chambre.hum_warning,
-      data_netatmo.chambre.co2,
-      data_netatmo.chambre.co2_warning,
-      data_netatmo.chambre.temp_min,
-      data_netatmo.chambre.temp_max);
-    drawCol(480,
-      data_netatmo.bureau.temp,
-      data_netatmo.bureau.hum,
-      data_netatmo.bureau.hum_warning,
-      data_netatmo.bureau.co2,
-      data_netatmo.bureau.co2_warning,
-      data_netatmo.bureau.temp_min,
-      data_netatmo.bureau.temp_max);
+    if (data_netatmo.chambre) {
+      drawCol(320,
+        data_netatmo.chambre.temp,
+        data_netatmo.chambre.hum,
+        data_netatmo.chambre.hum_warning,
+        data_netatmo.chambre.co2,
+        data_netatmo.chambre.co2_warning,
+        data_netatmo.chambre.temp_min,
+        data_netatmo.chambre.temp_max);
+    }
+
+    if (data_netatmo.bureau) {
+      drawCol(480,
+        data_netatmo.bureau.temp,
+        data_netatmo.bureau.hum,
+        data_netatmo.bureau.hum_warning,
+        data_netatmo.bureau.co2,
+        data_netatmo.bureau.co2_warning,
+        data_netatmo.bureau.temp_min,
+        data_netatmo.bureau.temp_max);
+    }
+    
 
     drawDate(data_netatmo.time);
 
