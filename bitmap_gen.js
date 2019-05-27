@@ -372,7 +372,7 @@ function imageGenerator(opt) {
   
   function drawHourlyRain(data, left,  top) {
     //draw frame
-    bitmap.drawFilledRect(left +1, top, 64 , 1, color.black, color.black);
+    //bitmap.drawFilledRect(left +1, top, 64 , 1, color.black, color.black);
     bitmap.drawFilledRect(left +1, top + 9 , 64 , 1, color.black, color.black);
     bitmap.drawFilledRect(left , top +1 , 1 , 8, color.black, color.black);
     bitmap.drawFilledRect(left +65 , top +1, 1 , 8, color.black, color.black);
