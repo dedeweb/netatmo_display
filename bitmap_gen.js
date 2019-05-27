@@ -161,15 +161,20 @@ function imageGenerator(opt) {
     if (data.precip_prob > 0 && (data.rain_qty > 0 || data.snow_qty > 0 ) ) {
       let horizLineWidth = isSunday? 91 : 89;
       drawHorizDotLine(x+1,  y + 130, horizLineWidth);
+      if( data.rain_hourly && data.rain_hourly.length > 0 && data.rain_hourly.reduce((a,b) => a+b) > 0 ) {
+        drawHourlyRain(data.rain_hourly, x+20,  y + 135);
+      } else {
+        drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
+      }
+
       
-      drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
 
       if (data.snow_qty > 0) {
         bitmap.drawBitmap(res.icons.snow, x + 5, y + 141);
         bitmap.drawTextRight(res.font.black_18, data.snow_qty + '' , x + 40,y + 147);
         bitmap.drawBitmap(res.icons.cm, x + 45, y + 147);
       }  else if (data.rain_qty > 0) {
-        bitmap.drawBitmap(res.icons.rain, x + 5,  y + 142 );
+        bitmap.drawBitmap(res.icons.rain, x + 4,  y + 142 );
         bitmap.drawTextRight(res.font.black_18, data.rain_qty + '' , x + 40,  y + 147);
         bitmap.drawBitmap(res.icons.mm, x + 45,y + 147);
       }
@@ -365,6 +370,20 @@ function imageGenerator(opt) {
     //bitmap.setPixel(left + width - 1, top + height - 1, color.white);
   }
   
+  function drawHourlyRain(data, left,  top) {
+    //draw frame
+    bitmap.drawFilledRect(left +1, top, 64 , 1, color.black, color.black);
+    bitmap.drawFilledRect(left +1, top + 9 , 64 , 1, color.black, color.black);
+    bitmap.drawFilledRect(left , top +1 , 1 , 8, color.black, color.black);
+    bitmap.drawFilledRect(left +65 , top +1, 1 , 8, color.black, color.black);
+    //draw inside
+    let x=left+1;
+    // data =  [4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4];
+    for(let rain of data) {
+      bitmap.drawFilledRect(x, top + 9 - rain*2, 4, rain*2, color.red, color.red  );
+      x+=3;
+    }
+  }
   /*
   function drawDotBox(left, top, width, height, fillcolor) {
     var pixon = true;

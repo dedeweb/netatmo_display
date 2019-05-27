@@ -104,6 +104,22 @@ function wsMeteoblue(opt) {
 					weatherObj.days[index].icon = icon;
 				}
 			});
+
+			// get detailed rain if needed
+			let today = weatherObj.days[0+shiftDays];
+			if(today.rain_qty) {
+				today.rain_hourly = [];
+				$('.precip-bar-part .precip-hourly').each(function() { 
+					let precipBar = $(this).find('.precip-bar');
+					let predic = 0;
+					if(precipBar.length) {
+						predic = parseInt(/.*class-(\d)/gm.exec(precipBar.attr('class'))[1]);
+					}
+					today.rain_hourly.push(predic);
+				});
+				logger.debug('rain =', JSON.stringify(weatherObj.days[0+shiftDays].rain_hourly));
+			}
+
 			return weatherObj;
 		});
 	}
