@@ -162,7 +162,7 @@ function imageGenerator(opt) {
       let horizLineWidth = isSunday? 91 : 89;
       drawHorizDotLine(x+1,  y + 130, horizLineWidth);
       if( data.rain_hourly && data.rain_hourly.length > 0 && data.rain_hourly.reduce((a,b) => a+b) > 0 ) {
-        drawHourlyRain(data.rain_hourly, x+20,  y + 135);
+        drawHourlyRain(data.rain_hourly, x+20,  y + 133);
       } else {
         drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
       }
@@ -373,16 +373,24 @@ function imageGenerator(opt) {
   function drawHourlyRain(data, left,  top) {
     //draw frame
     //bitmap.drawFilledRect(left +1, top, 64 , 1, color.black, color.black);
-    bitmap.drawFilledRect(left +1, top + 9 , 64 , 1, color.black, color.black);
+    
+    bitmap.drawFilledRect(left +1, top + 9 , 63 , 1, color.black, color.black);
     bitmap.drawFilledRect(left , top +1 , 1 , 8, color.black, color.black);
-    bitmap.drawFilledRect(left +65 , top +1, 1 , 8, color.black, color.black);
+    bitmap.drawFilledRect(left +64 , top +1, 1 , 8, color.black, color.black);
     //draw inside
     let x=left+1;
     // data =  [4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4];
     for(let rain of data) {
-      bitmap.drawFilledRect(x, top + 9 - rain*2, 4, rain*2, color.red, color.red  );
+      bitmap.drawFilledRect(x, top + 9 - rain*2, 3, rain*2, color.red, color.red  );
       x+=3;
     }
+    
+    bitmap.setPixel(left+ 6*3 + 2 ,top +10, color.black);
+    bitmap.setPixel(left+ 10*3 + 2 ,top +10, color.black);
+    bitmap.setPixel(left+ 16*3 + 2 ,top +10, color.black);
+    bitmap.setPixel(left+ 6*3 + 2 ,top +11, color.black);
+    bitmap.setPixel(left+ 10*3 + 2 ,top +11, color.black);
+    bitmap.setPixel(left+ 16*3 + 2 ,top +11, color.black);
   }
   /*
   function drawDotBox(left, top, width, height, fillcolor) {

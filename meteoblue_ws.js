@@ -117,6 +117,9 @@ function wsMeteoblue(opt) {
 					}
 					today.rain_hourly.push(predic);
 				});
+        if(today.rain_hourly.length > 21) {
+          today.rain_hourly = today.rain_hourly.slice(today.length - 21);
+        }
 				logger.debug('rain =', JSON.stringify(weatherObj.days[0+shiftDays].rain_hourly));
 			}
 
