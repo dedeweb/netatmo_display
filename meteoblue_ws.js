@@ -97,8 +97,9 @@ function wsMeteoblue(opt) {
 					let predic = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'))[1];
 					weatherObj.days[index].predictability = parseFloat(predic) / 5.0;
 					logger.debug('predictability',weatherObj.days[index].predictability);
-
-					let iconNber = parseInt(/.*p(\d*)_iday/gm.exec($(this).find('.weather .pictoicon .picon').attr('class'))[1]);
+          let pic_src =  $(this).find('.weather .day .weather_pictogram').attr('src'); //like  /website/images/picto/svg/weather_pictos_classic.svg?rev=2#3_daily_day_classic
+         
+					let iconNber = parseInt(/.*weather_pictos_classic\.svg\?.*#(\d*)_daily_day_classic/gm.exec(pic_src)[1]);
 					let icon = nberToIco(iconNber);
 					logger.debug('update icon',weatherObj.days[index].icon, '->',  icon);
 					weatherObj.days[index].icon = icon;
