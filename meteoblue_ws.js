@@ -97,12 +97,20 @@ function wsMeteoblue(opt) {
 					let predic = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'))[1];
 					weatherObj.days[index].predictability = parseFloat(predic) / 5.0;
 					logger.debug('predictability',weatherObj.days[index].predictability);
-          let pic_src =  $(this).find('.weather .day .weather_pictogram').attr('src'); //like  /website/images/picto/svg/weather_pictos_classic.svg?rev=2#3_daily_day_classic
-         
-					let iconNber = parseInt(/.*weather_pictos_classic\.svg\?.*#(\d*)_daily_day_classic/gm.exec(pic_src)[1]);
-					let icon = nberToIco(iconNber);
-					logger.debug('update icon',weatherObj.days[index].icon, '->',  icon);
-					weatherObj.days[index].icon = icon;
+          try {
+            let pic_src =  $(this).find('.weather .day .weather_pictogram').attr('src'); //like  https://static.meteoblue.com/website/images/picto/06_iday.svg
+
+            let iconNber = parseInt(/.*static\.meteoblue\.com\/website\/images\/picto\/(\d*)_iday\.svg/gm.exec(pic_src)[1]);
+            let icon = nberToIco(parseInt(iconNber));
+            logger.debug('update icon',weatherObj.days[index].icon, '->',  icon);
+            weatherObj.days[index].icon = icon; 
+          }
+          catch (e) {
+            logger.error('cannot parse weather icon ' + (e.message || e));
+            // process.emit('uncaughtException', e);
+
+            weatherObj.days[index].icon = 'unknown';
+          }
 				}
 			});
 
