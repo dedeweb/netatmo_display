@@ -18,7 +18,7 @@
     "child-process-promise": "^2.2.1",
     "epoll": "^2.0.1",
     "express": "^4.16.3",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.21",
     "moment": "^2.19.2",
     "onoff": "^1.1.9",
     "request": "^2.83.0",
