@@ -100,7 +100,7 @@ function wsMeteoblue(opt) {
           try {
             let pic_src =  $(this).find('.weather .day .weather_pictogram').attr('src'); //like  https://static.meteoblue.com/website/images/picto/06_iday.svg
 
-            let iconNber = parseInt(/.*static\.meteoblue\.com\/website\/images\/picto\/(\d*)_iday\.svg/gm.exec(pic_src)[1]);
+            let iconNber = parseInt(/.*static\.meteoblue\.com\/assets\/images\/picto\/(\d*)_iday\.svg/gm.exec(pic_src)[1]);
             let icon = nberToIco(parseInt(iconNber));
             logger.debug('update icon',weatherObj.days[index].icon, '->',  icon);
             weatherObj.days[index].icon = icon; 
