@@ -136,7 +136,7 @@ function wsMeteoblue(opt) {
 			if (day.rain_hourly.length > 21) {
 				day.rain_hourly = day.rain_hourly.slice(0,21);
 			}
-			logger.debug('rain =', JSON.stringify(weatherObj.days[0 + shiftDays].rain_hourly));
+			logger.debug('rain =', JSON.stringify(day.rain_hourly));
 		}
 	}
 	
