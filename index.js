@@ -533,13 +533,13 @@ function getDataFromNetatmo() {
 	}).then(function (data) {
 		let devices = JSON.parse(data).body.devices[0];
 		let capt_ext = _.find(devices.modules, {
-			_id: config.netatmo_config.outside.id
+			_id: config.netatmo_config.weather.outside.id
 		});
 		let capt_room_1 = _.find(devices.modules, {
-			_id: config.netatmo_config.room_1.id
+			_id: config.netatmo_config.weather.room_1.id
 		});
 		let capt_room_2 = _.find(devices.modules, {
-			_id: config.netatmo_config.room_2.id
+			_id: config.netatmo_config.weather.room_2.id
 		});
 
 		let returnVal = {
