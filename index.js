@@ -616,7 +616,11 @@ function getDataFromNetatmo() {
 	function setThermMode(token, homeid, mode) {
 		return request({
 			method: 'POST',
-			uri: 'https://api.netatmo.com/api/setthermmode?home_id=' + homeid + '&mode=' + mode + '&access_token=' + token
+			headers: {
+				'accept': 'application/json',
+				'Authorization': 'Bearer ' + token
+			},
+			uri: 'https://api.netatmo.com/api/setthermmode?home_id=' + homeid + '&mode=' + mode
 		})
 	}
 }
