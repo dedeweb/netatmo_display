@@ -11,6 +11,9 @@ function imageGenerator(opt) {
   const moment = require('moment');
   moment.locale('fr');
   const fs = require('fs');
+
+  const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+
   
   addDrawTextRightFunction();
   const led = require(path.join(__dirname, 'led'))({
@@ -58,39 +61,39 @@ function imageGenerator(opt) {
       drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max, data_netatmo.ext.hum);
     }
     
-    if (data_netatmo.salon) {
+    if (data_netatmo.main_room) {
       drawCol(160,
-        data_netatmo.salon.temp,
-        data_netatmo.salon.hum,
-        data_netatmo.salon.hum_warning,
-        data_netatmo.salon.co2,
-        data_netatmo.salon.co2_warning,
-        data_netatmo.salon.temp_min,
-        data_netatmo.salon.temp_max,
-        data_netatmo.salon.noise,
-        data_netatmo.salon.noise_warning);
+        data_netatmo.main_room.temp,
+        data_netatmo.main_room.hum,
+        data_netatmo.main_room.hum_warning,
+        data_netatmo.main_room.co2,
+        data_netatmo.main_room.co2_warning,
+        data_netatmo.main_room.temp_min,
+        data_netatmo.main_room.temp_max,
+        data_netatmo.main_room.noise,
+        data_netatmo.main_room.noise_warning);
     }
 
-    if (data_netatmo.chambre) {
+    if (data_netatmo.room_1) {
       drawCol(320,
-        data_netatmo.chambre.temp,
-        data_netatmo.chambre.hum,
-        data_netatmo.chambre.hum_warning,
-        data_netatmo.chambre.co2,
-        data_netatmo.chambre.co2_warning,
-        data_netatmo.chambre.temp_min,
-        data_netatmo.chambre.temp_max);
+        data_netatmo.room_1.temp,
+        data_netatmo.room_1.hum,
+        data_netatmo.room_1.hum_warning,
+        data_netatmo.room_1.co2,
+        data_netatmo.room_1.co2_warning,
+        data_netatmo.room_1.temp_min,
+        data_netatmo.room_1.temp_max);
     }
 
-    if (data_netatmo.bureau) {
+    if (data_netatmo.room_2) {
       drawCol(480,
-        data_netatmo.bureau.temp,
-        data_netatmo.bureau.hum,
-        data_netatmo.bureau.hum_warning,
-        data_netatmo.bureau.co2,
-        data_netatmo.bureau.co2_warning,
-        data_netatmo.bureau.temp_min,
-        data_netatmo.bureau.temp_max);
+        data_netatmo.room_2.temp,
+        data_netatmo.room_2.hum,
+        data_netatmo.room_2.hum_warning,
+        data_netatmo.room_2.co2,
+        data_netatmo.room_2.co2_warning,
+        data_netatmo.room_2.temp_min,
+        data_netatmo.room_2.temp_max);
     }
     
 
@@ -208,10 +211,10 @@ function imageGenerator(opt) {
     drawDotLine(319, 20, 163);
     drawDotLine(479, 20, 140);
 
-    bitmap.drawText(res.font.white_18, "EXTÉRIEUR", 15, 1);
-    bitmap.drawText(res.font.white_18, "SÉJOUR", 175, 1);
-    bitmap.drawText(res.font.white_18, "CHAMBRE", 335, 1);
-    bitmap.drawText(res.font.white_18, "BUREAU", 495, 1);
+    bitmap.drawText(res.font.white_18, config.netatmo_config.weather.outside.label, 15, 1);
+    bitmap.drawText(res.font.white_18, config.netatmo_config.weather.main_room.label, 175, 1);
+    bitmap.drawText(res.font.white_18, config.netatmo_config.weather.room_1.label, 335, 1);
+    bitmap.drawText(res.font.white_18, config.netatmo_config.weather.room_2.label, 495, 1);
   }
 
   function drawFirstCol(temp, temp_trend, temp_min, temp_max, hum) {

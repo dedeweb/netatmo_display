@@ -8,7 +8,7 @@ function wsDarksky(opt) {
   //params
   let logger = opt.logger;
   
-  const authData = JSON.parse(fs.readFileSync(path.join(__dirname, 'auth.json'), 'utf8'));
+  const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 
   // API/data for end-user
   return {
@@ -21,7 +21,7 @@ function wsDarksky(opt) {
   function getData() {
     return request({
       method: 'GET',
-      uri: 'https://api.darksky.net/forecast/' + authData.darksky.secret + '/45.194444,%205.737515?lang=fr&units=ca'
+      uri: 'https://api.darksky.net/forecast/' + config.darksky_auth.secret + '/45.194444,%205.737515?lang=fr&units=ca'
     }).then(function(data) {
       return transformData(JSON.parse(data));
     });

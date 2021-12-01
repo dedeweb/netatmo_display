@@ -2,7 +2,7 @@ const path = require('path');
 //const netatmo = require('netatmo');
 const request = require('request-promise');
 const _ = require('lodash');
-const moment = require('moment');moment.locale('fr');
+const moment = require('moment'); moment.locale('fr');
 const spawn = require('child-process-promise').spawn;
 const exec = require('child_process').exec;
 const winston = require('winston');
@@ -32,18 +32,23 @@ const trigger_temp = 0.8;
 const trigger_co2 = 500;
 const trigger_hum = 5;
 
+
+//heating
+const heating_off_trigger = 20.0;
+const heating_on_trigger = 19.5;
+
 const morning_hour = 6; //trigger on ext. temp only after this hour. 
 
 //forecast update times 
 //for meteoblue : https://content.meteoblue.com/en/research-development/data-sources/weather-modelling/model-run
 const forecast_update_times = ['06:00:00', '08:15:00 00Z', '18:30:00', '20:15:00 00Z']
 
-var logger = new(winston.Logger)({
+var logger = new (winston.Logger)({
 	transports: [
 		new winston.transports.Console({
 			level: 'debug',
 			colorize: true,
-			timestamp: function() {
+			timestamp: function () {
 				return moment().format('YYYY-MM-DD HH:mm:ss');
 			},
 			handleExceptions: true,
@@ -53,7 +58,7 @@ var logger = new(winston.Logger)({
 			name: 'file#info',
 			level: 'info',
 			colorize: false,
-			timestamp: function() {
+			timestamp: function () {
 				return moment().format('YYYY-MM-DD HH:mm:ss');
 			},
 			json: false,
@@ -68,7 +73,7 @@ var logger = new(winston.Logger)({
 			name: 'file#error',
 			level: 'error',
 			colorize: false,
-			timestamp: function() {
+			timestamp: function () {
 				return moment().format('YYYY-MM-DD HH:mm:ss');
 			},
 			json: false,
@@ -83,10 +88,10 @@ var logger = new(winston.Logger)({
 });
 
 //load auth data
-if(!fs.existsSync(path.join(__dirname, 'auth.json'))) {
-  throw 'auth file not found, cannot continue.';
+if (!fs.existsSync(path.join(__dirname, 'config.json'))) {
+	throw 'config file not found, cannot continue.';
 }
-const authData = JSON.parse(fs.readFileSync(path.join(__dirname, 'auth.json'), 'utf8'));
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 
 
 
@@ -110,25 +115,25 @@ const darksky_ws = require(path.join(__dirname, 'darksky_ws'))({
 
 const api_server = require(path.join(__dirname, 'api_server'))({
 	logger: logger,
-	refreshScreenCallback : function () {
-		if(refreshing) {
+	refreshScreenCallback: function () {
+		if (refreshing) {
 			logger.warn('refresh is already in progress');
 		} else {
 			startTime = moment();
 			led.goBusyFlashing();
 			sendToScreen(vcom_normal).then(function () {
-				led.exitBusy();	
-			});	
+				led.exitBusy();
+			});
 		}
 	},
-	fullRefreshCallback: function() {
+	fullRefreshCallback: function () {
 		refresh(false);
 	}
 });
 
 const bmp_gen = require(path.join(__dirname, 'bitmap_gen'))({
 	logger: logger,
-	outputFile:outputFile,
+	outputFile: outputFile,
 	getTimespan: getTimespan
 });
 logger.info('script launch after', getTimespan());
@@ -160,99 +165,99 @@ function refresh(triggerNextUpdate) {
 	startTime = moment();
 	led.goBusyGreen();
 	let nextUpdateTimeoutSet = false;
-	getDataFromNetatmo().then(function(data_netatmo) {
-			if (data_netatmo) {
-				logger.info('netatmo data received after', getTimespan());
+	getDataFromNetatmo().then(function (data_netatmo) {
+		if (data_netatmo) {
+			logger.info('netatmo data received after', getTimespan());
 
-				let lastStoreTimeSpanMs = moment().diff(moment('' + data_netatmo.last_store_time, 'X')),
-					lastStoreTimeSpan = moment(lastStoreTimeSpanMs);
+			let lastStoreTimeSpanMs = moment().diff(moment('' + data_netatmo.last_store_time, 'X')),
+				lastStoreTimeSpan = moment(lastStoreTimeSpanMs);
 
-				logger.info('last store date was', lastStoreTimeSpan.minutes() + 'm' + lastStoreTimeSpan.seconds() + 's ago');
+			logger.info('last store date was', lastStoreTimeSpan.minutes() + 'm' + lastStoreTimeSpan.seconds() + 's ago');
 
-				if (triggerNextUpdate) {
-					let shouldAbort = false;
-					//netatmo refresh is every 10 minutes, we make it 11 to be sure
-					let triggerSpan = 660000 - lastStoreTimeSpanMs;
-					if (lastStoreTimeSpanMs < 0) {
-						//should never happen :/
-						logger.warn('wrong timespan !', lastStoreTimeSpanMs);
-						triggerSpan = -1; //hack to refresh in 30s
-					}
-					if (triggerSpan < 0 && triggerSpan > -300000) {
-						// trigger span is negative (between 11 and 15 minutes ago), let's refresh in 30 sec, no need to go further  ! 
-						logger.info('no update since between 11 and 15 minutes, retry in 30s !');
-						triggerSpan = 30000;
-						shouldAbort = true;
-					} else if (triggerSpan < 0) {
-						logger.debug('timespan ms is ', lastStoreTimeSpanMs);
-						logger.debug('triggerSpan is ', triggerSpan);
-						logger.info('no news for more than 15 minutes, try again in 10 minutes');
-						// no news for more than 15 minutes, there is probably a problem. Lets try again in in 10 minutes. No need to go further ! 
-						triggerSpan = 600000;
-						shouldAbort = true;
-					} else if (triggerSpan < 300000) {
-						logger.warn('trigger span is less than 5 min, setting it to 5 min. tiggerSpan =', triggerSpan);
-						triggerSpan = 300000;
-					}
-					logger.info('set timeout in ' + triggerSpan + 'ms');
-					setTimeout(function() {
-						refresh(true);
-					}, triggerSpan);
-					nextUpdateTimeoutSet = true;
-					if (shouldAbort) {
-						throw 'abort';
-					}
-					if (refreshing) {
-						throw 'already_refreshing';
-					}
-					addNoiseToTab(data_netatmo.salon.noise);
-					if (!shouldUpdate(previous_data, data_netatmo)) {
-						throw 'no_changes';
-					}
-				} else {
-					logger.warn('Manual update : do not set trigger');
+			if (triggerNextUpdate) {
+				let shouldAbort = false;
+				//netatmo refresh is every 10 minutes, we make it 11 to be sure
+				let triggerSpan = 660000 - lastStoreTimeSpanMs;
+				if (lastStoreTimeSpanMs < 0) {
+					//should never happen :/
+					logger.warn('wrong timespan !', lastStoreTimeSpanMs);
+					triggerSpan = -1; //hack to refresh in 30s
 				}
-				refreshing = true;
-				previous_data = data_netatmo;
-				commitNoiseValues();
-				
-				fail_count = 0;
-				if (shouldUpdateForecast()) {
-					logger.info('updating forecast...');
-					return darksky_ws.getData().then(function(data_darksky) {
-						logger.info('darksky data received after', getTimespan());
-						last_darksky_update = moment();
-						return meteoblue_ws.getData(data_darksky).then(function(data_meteoblue) {
-							logger.info('meteoblue data received after', getTimespan());
-							bmp_gen.drawImage(data_netatmo, data_meteoblue);
-              return getVcomFromTemp(data_netatmo.salon.temp);
-						}).catch(function(e) {
-							logger.warn('cannot load data from meteoblue');
-							logger.warn(e);
-							bmp_gen.drawImage(data_netatmo, data_darksky);
-              return getVcomFromTemp(data_netatmo.salon.temp);
-						});
-					}).catch(function(e) {
-						logger.error('error getting forecast ! ', e);
-						bmp_gen.drawImage(data_netatmo, null);
-            return getVcomFromTemp(data_netatmo.salon.temp);
-					});
-				} else {
-					logger.info('no need to refresh forecast.');
-					bmp_gen.drawImage(data_netatmo, null);
-          return getVcomFromTemp(data_netatmo.salon.temp);
+				if (triggerSpan < 0 && triggerSpan > -300000) {
+					// trigger span is negative (between 11 and 15 minutes ago), let's refresh in 30 sec, no need to go further  ! 
+					logger.info('no update since between 11 and 15 minutes, retry in 30s !');
+					triggerSpan = 30000;
+					shouldAbort = true;
+				} else if (triggerSpan < 0) {
+					logger.debug('timespan ms is ', lastStoreTimeSpanMs);
+					logger.debug('triggerSpan is ', triggerSpan);
+					logger.info('no news for more than 15 minutes, try again in 10 minutes');
+					// no news for more than 15 minutes, there is probably a problem. Lets try again in in 10 minutes. No need to go further ! 
+					triggerSpan = 600000;
+					shouldAbort = true;
+				} else if (triggerSpan < 300000) {
+					logger.warn('trigger span is less than 5 min, setting it to 5 min. tiggerSpan =', triggerSpan);
+					triggerSpan = 300000;
+				}
+				logger.info('set timeout in ' + triggerSpan + 'ms');
+				setTimeout(function () {
+					refresh(true);
+				}, triggerSpan);
+				nextUpdateTimeoutSet = true;
+				if (shouldAbort) {
+					throw 'abort';
+				}
+				if (refreshing) {
+					throw 'already_refreshing';
+				}
+				addNoiseToTab(data_netatmo.main_room.noise);
+				if (!shouldUpdate(previous_data, data_netatmo)) {
+					throw 'no_changes';
 				}
 			} else {
-				logger.error('no netatmo data :(');
+				logger.warn('Manual update : do not set trigger');
 			}
-		}).then(function(vcom) {
-      if(!vcom) {
-        vcom =  vcom_normal; 
-      }
-			led.goBusyFlashing();
-			return sendToScreen(vcom);
-		})
-		.catch(function(error) {
+			refreshing = true;
+			previous_data = data_netatmo;
+			commitNoiseValues();
+
+			fail_count = 0;
+			if (shouldUpdateForecast()) {
+				logger.info('updating forecast...');
+				return darksky_ws.getData().then(function (data_darksky) {
+					logger.info('darksky data received after', getTimespan());
+					last_darksky_update = moment();
+					return meteoblue_ws.getData(data_darksky).then(function (data_meteoblue) {
+						logger.info('meteoblue data received after', getTimespan());
+						bmp_gen.drawImage(data_netatmo, data_meteoblue);
+						return getVcomFromTemp(data_netatmo.main_room.temp);
+					}).catch(function (e) {
+						logger.warn('cannot load data from meteoblue');
+						logger.warn(e);
+						bmp_gen.drawImage(data_netatmo, data_darksky);
+						return getVcomFromTemp(data_netatmo.main_room.temp);
+					});
+				}).catch(function (e) {
+					logger.error('error getting forecast ! ', e);
+					bmp_gen.drawImage(data_netatmo, null);
+					return getVcomFromTemp(data_netatmo.main_room.temp);
+				});
+			} else {
+				logger.info('no need to refresh forecast.');
+				bmp_gen.drawImage(data_netatmo, null);
+				return getVcomFromTemp(data_netatmo.main_room.temp);
+			}
+		} else {
+			logger.error('no netatmo data :(');
+		}
+	}).then(function (vcom) {
+		if (!vcom) {
+			vcom = vcom_normal;
+		}
+		led.goBusyFlashing();
+		return sendToScreen(vcom);
+	})
+		.catch(function (error) {
 			if (error === 'already_refreshing') {
 				logger.warn('already refreshing ! ');
 			} else if (error === 'abort') {
@@ -263,10 +268,10 @@ function refresh(triggerNextUpdate) {
 				fail_count++;
 				logger.error('unexpected error (', fail_count, 'times)');
 				logger.error(error);
-				
-				if(fail_count >= retry_before_reboot ) {
+
+				if (fail_count >= retry_before_reboot) {
 					logger.warn('too much fails, rebooting');
-					if(PROD) {
+					if (PROD) {
 						exec('/sbin/reboot', function (msg) {
 							logger.info(msg);
 						});
@@ -274,11 +279,11 @@ function refresh(triggerNextUpdate) {
 				}
 			}
 		})
-		.finally(function() {
+		.finally(function () {
 			logger.info('completed in', getTimespan());
 			if (!nextUpdateTimeoutSet && triggerNextUpdate) {
 				logger.warn('next update is not set, forcing it in 11m');
-				setTimeout(function() {
+				setTimeout(function () {
 					refresh(true);
 				}, 660000);
 			}
@@ -291,10 +296,10 @@ function refresh(triggerNextUpdate) {
 
 //in hot contition, we have to raise vcom, otherwise screen looks gray :(
 function getVcomFromTemp(temp) {
-  if(temp >= vcom_trigger_temp) {
-    return vcom_hot;
-  } 
-  return vcom_normal;
+	if (temp >= vcom_trigger_temp) {
+		return vcom_hot;
+	}
+	return vcom_normal;
 }
 
 function sendToScreen(vcom) {
@@ -304,7 +309,7 @@ function sendToScreen(vcom) {
 			clearTimeout(id);
 		}, cmdTimeout);
 	});
-  logger.info('vcom is', vcom);
+	logger.info('vcom is', vcom);
 	logger.info('spawning python command');
 	let promiseSpawn;
 	if (PROD) {
@@ -314,13 +319,13 @@ function sendToScreen(vcom) {
 		promiseSpawn = spawn('sh', [path.join(__dirname, 'fake_disp.sh')]);
 	}
 
-	promiseSpawn.childProcess.stdout.on('data', function(data) {
+	promiseSpawn.childProcess.stdout.on('data', function (data) {
 		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
 		if (dataStr) {
 			logger.info('py stdout:', dataStr);
 		}
 	});
-	promiseSpawn.childProcess.stderr.on('data', function(data) {
+	promiseSpawn.childProcess.stderr.on('data', function (data) {
 		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
 		if (dataStr) {
 			logger.info('py stderr:', dataStr);
@@ -328,11 +333,11 @@ function sendToScreen(vcom) {
 	});
 	let spawnFinished = false;
 	return Promise.race([
-		promiseSpawn.then(function(result) {
+		promiseSpawn.then(function (result) {
 			spawnFinished = true;
 			logger.info('image displayed after', getTimespan());
 		}),
-		timeout.then(function() {
+		timeout.then(function () {
 			promiseSpawn.childProcess.kill();
 			if (!spawnFinished) {
 				logger.warn('image display timeout after', getTimespan());
@@ -437,9 +442,9 @@ function shouldUpdate(lastVal, newVal) {
 	}
 
 	//temp check
-	if (shouldUpdateTemp(lastVal.salon.temp, newVal.salon.temp) ||
-		shouldUpdateTemp(lastVal.chambre.temp, newVal.chambre.temp) ||
-		shouldUpdateTemp(lastVal.bureau.temp, newVal.bureau.temp)) {
+	if (shouldUpdateTemp(lastVal.main_room.temp, newVal.main_room.temp) ||
+		shouldUpdateTemp(lastVal.room_1.temp, newVal.room_1.temp) ||
+		shouldUpdateTemp(lastVal.room_2.temp, newVal.room_2.temp)) {
 		return true;
 	}
 
@@ -449,16 +454,16 @@ function shouldUpdate(lastVal, newVal) {
 	}
 
 	//CO2 check
-	if (shouldUpdateCO2(lastVal.salon.co2, newVal.salon.co2) ||
-		shouldUpdateCO2(lastVal.chambre.co2, newVal.chambre.co2) ||
-		shouldUpdateCO2(lastVal.bureau.co2, newVal.bureau.co2)) {
+	if (shouldUpdateCO2(lastVal.main_room.co2, newVal.main_room.co2) ||
+		shouldUpdateCO2(lastVal.room_1.co2, newVal.room_1.co2) ||
+		shouldUpdateCO2(lastVal.room_2.co2, newVal.room_2.co2)) {
 		return true;
 	}
 
 	//hum check
-	if (shouldUpdateHum(lastVal.salon.hum, newVal.salon.hum) ||
-		shouldUpdateHum(lastVal.chambre.hum, newVal.chambre.hum) ||
-		shouldUpdateHum(lastVal.bureau.hum, newVal.bureau.hum)) {
+	if (shouldUpdateHum(lastVal.main_room.hum, newVal.main_room.hum) ||
+		shouldUpdateHum(lastVal.room_1.hum, newVal.room_1.hum) ||
+		shouldUpdateHum(lastVal.room_2.hum, newVal.room_2.hum)) {
 		return true;
 	}
 
@@ -513,34 +518,34 @@ function shouldUpdateNoise(lastVal, newVal) {
 
 function getDataFromNetatmo() {
 	let accessToken = '';
-  let formData =  Object.assign({ grant_type: 'password' }, authData.netatmo);
+	let formData = Object.assign({ grant_type: 'password' }, config.netatmo_auth);
 
-  return request({
+	return request({
 		method: 'POST',
 		uri: 'https://api.netatmo.com/oauth2/token',
-		form:  formData   
-	}).then(function(data) {
+		form: formData
+	}).then(function (data) {
 		accessToken = JSON.parse(data).access_token;
 		return request({
 			method: 'POST',
 			uri: 'https://api.netatmo.com/api/getstationsdata?access_token=' + accessToken
 		});
-	}).then(function(data) {
+	}).then(function (data) {
 		let devices = JSON.parse(data).body.devices[0];
 		let capt_ext = _.find(devices.modules, {
-			_id: '02:00:00:13:42:00'
+			_id: config.netatmo_config.outside.id
 		});
-		let capt_chambre = _.find(devices.modules, {
-			_id: '03:00:00:03:94:9a'
+		let capt_room_1 = _.find(devices.modules, {
+			_id: config.netatmo_config.room_1.id
 		});
-		let capt_bureau = _.find(devices.modules, {
-			_id: '03:00:00:05:df:d2'
+		let capt_room_2 = _.find(devices.modules, {
+			_id: config.netatmo_config.room_2.id
 		});
 
-		let returnVal =  {
+		let returnVal = {
 			last_store_time: devices.last_status_store,
 			time: devices.dashboard_data.time_utc,
-			
+
 		};
 		if (capt_ext && capt_ext.dashboard_data) {
 			returnVal.ext = {
@@ -552,7 +557,7 @@ function getDataFromNetatmo() {
 			};
 		}
 		if (devices && devices.dashboard_data) {
-			returnVal.salon = {
+			returnVal.main_room = {
 				temp: devices.dashboard_data.Temperature,
 				hum: devices.dashboard_data.Humidity,
 				hum_warning: isHumWarning(devices.dashboard_data.Humidity),
@@ -564,34 +569,54 @@ function getDataFromNetatmo() {
 				noise: devices.dashboard_data.Noise,
 				noise_warning: isNoiseWarning(noise_avg_curr)
 			};
+
+			if (config.netatmo_config.heating) {
+				if (heating_off_trigger && returnVal.main_room.temp > config.netatmo_config.upper_temp) {
+					logger.info('turning off heating');
+					setThermMode(accessToken,config.netatmo_config.heating.home_id, 'away');
+				}
+				if (heating_on_trigger && returnVal.main_room.temp < config.netatmo_config.lower_temp) {
+					logger.info('turning on heating');
+					setThermMode(accessToken, config.netatmo_config.heating.home_id, 'schedule');
+				}
+			}
+
+
 		}
-		if (capt_chambre && capt_chambre.dashboard_data) {
-			returnVal.chambre = {
-				temp: capt_chambre.dashboard_data.Temperature,
-				hum: capt_chambre.dashboard_data.Humidity,
-				hum_warning: isHumWarning(capt_chambre.dashboard_data.Humidity),
-				temp_min: capt_chambre.dashboard_data.min_temp,
-				temp_max: capt_chambre.dashboard_data.max_temp,
-				temp_trend: capt_chambre.dashboard_data.temp_trend,
-				co2: capt_chambre.dashboard_data.CO2,
-				co2_warning: isCO2Warning(capt_chambre.dashboard_data.CO2)
+		if (capt_room_1 && capt_room_1.dashboard_data) {
+			returnVal.room_1 = {
+				temp: capt_room_1.dashboard_data.Temperature,
+				hum: capt_room_1.dashboard_data.Humidity,
+				hum_warning: isHumWarning(capt_room_1.dashboard_data.Humidity),
+				temp_min: capt_room_1.dashboard_data.min_temp,
+				temp_max: capt_room_1.dashboard_data.max_temp,
+				temp_trend: capt_room_1.dashboard_data.temp_trend,
+				co2: capt_room_1.dashboard_data.CO2,
+				co2_warning: isCO2Warning(capt_room_1.dashboard_data.CO2)
 			};
 		}
-		if (capt_bureau && capt_bureau.dashboard_data) {
-			returnVal.bureau = {
-				temp: capt_bureau.dashboard_data.Temperature,
-				hum: capt_bureau.dashboard_data.Humidity,
-				hum_warning: isHumWarning(capt_bureau.dashboard_data.Humidity),
-				temp_min: capt_bureau.dashboard_data.min_temp,
-				temp_max: capt_bureau.dashboard_data.max_temp,
-				temp_trend: capt_bureau.dashboard_data.temp_trend,
-				co2: capt_bureau.dashboard_data.CO2,
-				co2_warning: isCO2Warning(capt_bureau.dashboard_data.CO2)
+		if (capt_room_2 && capt_room_2.dashboard_data) {
+			returnVal.room_2 = {
+				temp: capt_room_2.dashboard_data.Temperature,
+				hum: capt_room_2.dashboard_data.Humidity,
+				hum_warning: isHumWarning(capt_room_2.dashboard_data.Humidity),
+				temp_min: capt_room_2.dashboard_data.min_temp,
+				temp_max: capt_room_2.dashboard_data.max_temp,
+				temp_trend: capt_room_2.dashboard_data.temp_trend,
+				co2: capt_room_2.dashboard_data.CO2,
+				co2_warning: isCO2Warning(capt_room_2.dashboard_data.CO2)
 			};
 		}
-		
+
 
 		return returnVal;
 	});
+
+	function setThermMode(token, homeid, mode) {
+		return request({
+			method: 'POST',
+			uri: 'https://api.netatmo.com/api/setthermmode?home_id=' + homeid + '&mode=' + mode + '&access_token=' + token
+		})
+	}
 }
 

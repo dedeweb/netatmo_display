@@ -3,3 +3,4 @@ out.bmp
 *.log
 debug
 auth.json
+config.json
