@@ -571,14 +571,14 @@ function getDataFromNetatmo() {
 			};
 
 			if (config.netatmo_config.heating) {
-				if (heating_off_trigger && returnVal.main_room.temp > config.netatmo_config.upper_temp) {
+				if (heating_off_trigger && returnVal.main_room.temp > config.netatmo_config.heating.upper_temp) {
 					logger.info('[heating] turning off heating');
 					setThermMode(accessToken, config.netatmo_config.heating.home_id, 'away');
-				} else if (heating_on_trigger && returnVal.main_room.temp < config.netatmo_config.lower_temp) {
+				} else if (heating_on_trigger && returnVal.main_room.temp < config.netatmo_config.heating.lower_temp) {
 					logger.info('[heating] turning on heating');
 					setThermMode(accessToken, config.netatmo_config.heating.home_id, 'schedule');
 				} else {
-					logger.info('[heating] ' + returnVal.main_room.temp + ' is between' + config.netatmo_config.lower_temp + ' and ' + config.netatmo_config.upper_temp + ': do nothing');
+					logger.info('[heating] ' + returnVal.main_room.temp + ' is between ' + config.netatmo_config.heating.lower_temp + ' and ' + config.netatmo_config.heating.upper_temp + ': do nothing');
 				}
 			}
 

@@ -114,27 +114,32 @@ function wsMeteoblue(opt) {
 				}
 			});
 
-			// get detailed rain if needed
-			let today = weatherObj.days[0 + shiftDays];
-			if (today.rain_qty) {
-				today.rain_hourly = [];
-				$('.precip-bar-part .precip-hourly').each(function () {
-					// let precipBar = $(this).find('.precip-bar');
-					let predic = 0;
-					//if(precipBar.length) {
-					predic = parseInt(/.*class-(\d)/gm.exec($(this).attr('class'))[1]);
-					//}
-					today.rain_hourly.push(predic);
-				});
-				if (today.rain_hourly.length > 21) {
-					today.rain_hourly = today.rain_hourly.slice(-21);
-				}
-				logger.debug('rain =', JSON.stringify(weatherObj.days[0 + shiftDays].rain_hourly));
-			}
+			
+			computeRainQty($, shiftDays, weatherObj.days[0 + shiftDays]); //today
+			computeRainQty($, shiftDays, weatherObj.days[1 + shiftDays]); //tomorrow
 
 			return weatherObj;
 		});
 	}
+
+	function computeRainQty($, shiftDays, day) {
+		if (day.rain_qty) {
+			day.rain_hourly = [];
+			$('.precip-bar-part .precip-hourly').each(function () {
+				// let precipBar = $(this).find('.precip-bar');
+				let predic = 0;
+				//if(precipBar.length) {
+				predic = parseInt(/.*class-(\d)/gm.exec($(this).attr('class'))[1]);
+				//}
+				day.rain_hourly.push(predic);
+			});
+			if (day.rain_hourly.length > 21) {
+				day.rain_hourly = day.rain_hourly.slice(0,21);
+			}
+			logger.debug('rain =', JSON.stringify(weatherObj.days[0 + shiftDays].rain_hourly));
+		}
+	}
+	
 
 	function getCheerioObj() {
 
