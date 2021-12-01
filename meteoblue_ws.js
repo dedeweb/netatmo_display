@@ -116,7 +116,6 @@ function wsMeteoblue(opt) {
 
 			
 			computeRainQty($, shiftDays, weatherObj.days[0 + shiftDays]); //today
-			computeRainQty($, shiftDays, weatherObj.days[1 + shiftDays]); //tomorrow
 
 			return weatherObj;
 		});
