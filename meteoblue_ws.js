@@ -17,7 +17,7 @@ function wsMeteoblue(opt) {
 	// private functions
 
 	function getData(previous_data) {
-		return getCheerioObj().then(function($) {
+		return getCheerioObj().then(function ($) {
 			let weatherObj = previous_data;
 			if (!weatherObj) {
 				weatherObj = {
@@ -42,33 +42,33 @@ function wsMeteoblue(opt) {
 					weatherObj.days.push(dayObj);
 				}
 			}
-			
+
 			let beginDay = $('#tab_results #tab_wrapper>.tab').first().find('.tab_day_long').text().trim().toLowerCase();
 			logger.debug('begin day is', beginDay);
 			let shiftDays = 0;
-			if(beginDay === 'demain') {
+			if (beginDay === 'demain') {
 				logger.info('begin day is tommorrow');
 				shiftDays = 1;
 			}
-			
-			
-			$('#tab_results #tab_wrapper>.tab').each(function(i, elt) {
+
+
+			$('#tab_results #tab_wrapper>.tab').each(function (i, elt) {
 				//let day_data = {};
 				//day_data.name = $(this).find('.day .tab_day_short').text().trim();
-				let index = i+shiftDays;
-				
-				if(index < weatherObj.days.length) {
-					
-					let max_temp =  $(this).find('.temps .tab_temp_max').text().replace('°C', '').trim();
-					logger.debug('update max_temp',weatherObj.days[index].max_temp, '->',  max_temp);
+				let index = i + shiftDays;
+
+				if (index < weatherObj.days.length) {
+
+					let max_temp = $(this).find('.temps .tab_temp_max').text().replace('°C', '').trim();
+					logger.debug('update max_temp', weatherObj.days[index].max_temp, '->', max_temp);
 					weatherObj.days[index].max_temp = max_temp;
 
 					let min_temp = $(this).find('.temps .tab_temp_min').text().replace('°C', '').trim();
-					logger.debug('update min_temp',weatherObj.days[index].min_temp, '->',  min_temp);
+					logger.debug('update min_temp', weatherObj.days[index].min_temp, '->', min_temp);
 					weatherObj.days[index].min_temp = min_temp;
 
 					let wind = $(this).find('.data .wind').text().replace('km/h', '').trim();
-					logger.debug('update wind',weatherObj.days[index].wind, '->',  wind);
+					logger.debug('update wind', weatherObj.days[index].wind, '->', wind);
 					weatherObj.days[index].wind = wind;
 
 					//windir seems inaccurate... keep it from darksky
@@ -96,40 +96,40 @@ function wsMeteoblue(opt) {
 					//day_data.sun = $(this).find('.data .tab_sun').text().replace('h', '').trim();
 					let predic = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'))[1];
 					weatherObj.days[index].predictability = parseFloat(predic) / 5.0;
-					logger.debug('predictability',weatherObj.days[index].predictability);
-          try {
-            let pic_src =  $(this).find('.weather .day .weather_pictogram').attr('src'); //like  https://static.meteoblue.com/website/images/picto/06_iday.svg
+					logger.debug('predictability', weatherObj.days[index].predictability);
+					try {
+						let pic_src = $(this).find('.weather .day .weather_pictogram').attr('src'); //like  https://static.meteoblue.com/website/images/picto/06_iday.svg
 
-            let iconNber = parseInt(/.*static\.meteoblue\.com\/assets\/images\/picto\/(\d*)_iday\.svg/gm.exec(pic_src)[1]);
-            let icon = nberToIco(parseInt(iconNber));
-            logger.debug('update icon',weatherObj.days[index].icon, '->',  icon);
-            weatherObj.days[index].icon = icon; 
-          }
-          catch (e) {
-            logger.error('cannot parse weather icon ' + (e.message || e));
-            // process.emit('uncaughtException', e);
+						let iconNber = parseInt(/.*static\.meteoblue\.com\/assets\/images\/picto\/(\d*)_iday\.svg/gm.exec(pic_src)[1]);
+						let icon = nberToIco(parseInt(iconNber));
+						logger.debug('update icon', weatherObj.days[index].icon, '->', icon);
+						weatherObj.days[index].icon = icon;
+					}
+					catch (e) {
+						logger.error('cannot parse weather icon ' + (e.message || e));
+						// process.emit('uncaughtException', e);
 
-            weatherObj.days[index].icon = 'unknown';
-          }
+						weatherObj.days[index].icon = 'unknown';
+					}
 				}
 			});
 
 			// get detailed rain if needed
-			let today = weatherObj.days[0+shiftDays];
-			if(today.rain_qty) {
+			let today = weatherObj.days[0 + shiftDays];
+			if (today.rain_qty) {
 				today.rain_hourly = [];
-				$('.precip-bar-part .precip-hourly').each(function() { 
-					let precipBar = $(this).find('.precip-bar');
+				$('.precip-bar-part .precip-hourly').each(function () {
+					// let precipBar = $(this).find('.precip-bar');
 					let predic = 0;
-					if(precipBar.length) {
-						predic = parseInt(/.*class-(\d)/gm.exec(precipBar.attr('class'))[1]);
-					}
+					//if(precipBar.length) {
+					predic = parseInt(/.*class-(\d)/gm.exec($(this).attr('class'))[1]);
+					//}
 					today.rain_hourly.push(predic);
 				});
-			        if(today.rain_hourly.length > 21) {
-				        today.rain_hourly = today.rain_hourly.slice(-21);
-        			}
-				logger.debug('rain =', JSON.stringify(weatherObj.days[0+shiftDays].rain_hourly));
+				if (today.rain_hourly.length > 21) {
+					today.rain_hourly = today.rain_hourly.slice(-21);
+				}
+				logger.debug('rain =', JSON.stringify(weatherObj.days[0 + shiftDays].rain_hourly));
 			}
 
 			return weatherObj;
@@ -139,7 +139,7 @@ function wsMeteoblue(opt) {
 	function getCheerioObj() {
 
 		return request('https://www.meteoblue.com/fr_FR/weather/forecast/week/grenoble_fr_31635')
-			.then(function(html) {
+			.then(function (html) {
 				return cheerio.load(html);
 			});
 
