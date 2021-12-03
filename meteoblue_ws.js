@@ -94,9 +94,16 @@ function wsMeteoblue(opt) {
 					}*/
 
 					//day_data.sun = $(this).find('.data .tab_sun').text().replace('h', '').trim();
-					let predic = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'))[1];
-					weatherObj.days[index].predictability = parseFloat(predic) / 5.0;
-					logger.debug('predictability', weatherObj.days[index].predictability);
+					let predicElt = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'));
+					if(predicElt && predicElt.length > 0 ) {
+						let predic =predicElt[1];
+						weatherObj.days[index].predictability = parseFloat(predic) / 5.0;
+						logger.debug('predictability', weatherObj.days[index].predictability);
+					} else {
+						logger.warn('cannot parse predictability ! ');
+						logger.verbose($(this).html());
+					}
+					
 					try {
 						let pic_src = $(this).find('.weather .day .weather_pictogram').attr('src'); //like  https://static.meteoblue.com/website/images/picto/06_iday.svg
 
