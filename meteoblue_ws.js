@@ -94,13 +94,15 @@ function wsMeteoblue(opt) {
 					}*/
 
 					//day_data.sun = $(this).find('.data .tab_sun').text().replace('h', '').trim();
-					let predicElt = /.*class-(\d)/gm.exec($(this).find('.tab_predictability .meter_inner.predictability').attr('class'));
+					let predicClass = $(this).find('.tab_predictability .meter_inner.predictability').attr('class');
+					let predicElt = /.*class-(\d)/gm.exec(predicClass);
 					if(predicElt && predicElt.length > 0 ) {
 						let predic =predicElt[1];
 						weatherObj.days[index].predictability = parseFloat(predic) / 5.0;
 						logger.debug('predictability', weatherObj.days[index].predictability);
 					} else {
 						logger.warn('cannot parse predictability ! ');
+						logger.verbose('predic class : ' + predicClass);
 						logger.verbose($(this).html());
 					}
 					
