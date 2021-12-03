@@ -94,7 +94,7 @@ function wsMeteoblue(opt) {
 					}*/
 
 					//day_data.sun = $(this).find('.data .tab_sun').text().replace('h', '').trim();
-					let predicClass = $(this).find('.tab_predictability .meter_inner.predictability').attr('class');
+					let predicClass = $(this).find('.tab-predictability .meter_inner.predictability').attr('class');
 					let predicElt = /.*class-(\d)/gm.exec(predicClass);
 					if(predicElt && predicElt.length > 0 ) {
 						let predic =predicElt[1];
