@@ -59,11 +59,11 @@ function wsMeteoblue(opt) {
 
 				if (index < weatherObj.days.length) {
 
-					let max_temp = $(this).find('.temps .tab_temp_max').text().replace('°C', '').trim();
+					let max_temp = $(this).find('.temps .tab-temp-max').text().replace('°C', '').trim();
 					logger.debug('update max_temp', weatherObj.days[index].max_temp, '->', max_temp);
 					weatherObj.days[index].max_temp = max_temp;
 
-					let min_temp = $(this).find('.temps .tab_temp_min').text().replace('°C', '').trim();
+					let min_temp = $(this).find('.temps .tab-temp-min').text().replace('°C', '').trim();
 					logger.debug('update min_temp', weatherObj.days[index].min_temp, '->', min_temp);
 					weatherObj.days[index].min_temp = min_temp;
 
