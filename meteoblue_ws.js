@@ -94,7 +94,7 @@ function wsMeteoblue(opt) {
 					}*/
 
 					//day_data.sun = $(this).find('.data .tab_sun').text().replace('h', '').trim();
-					let predicClass = $(this).find('.tab-predictability .meter_inner.predictability').attr('class');
+					let predicClass = $(this).find('.tab-predictability .meter-inner.predictability').attr('class');
 					let predicElt = /.*class-(\d)/gm.exec(predicClass);
 					if(predicElt && predicElt.length > 0 ) {
 						let predic =predicElt[1];
@@ -107,7 +107,7 @@ function wsMeteoblue(opt) {
 					}
 					
 					try {
-						let pic_src = $(this).find('.weather .day .weather_pictogram').attr('src'); //like  https://static.meteoblue.com/website/images/picto/06_iday.svg
+						let pic_src = $(this).find('.weather .day .weather-pictogram').attr('src'); //like  https://static.meteoblue.com/website/images/picto/06_iday.svg
 
 						let iconNber = parseInt(/.*static\.meteoblue\.com\/assets\/images\/picto\/(\d*)_iday\.svg/gm.exec(pic_src)[1]);
 						let icon = nberToIco(parseInt(iconNber));
