@@ -192,6 +192,10 @@ function wsMeteoblue(opt) {
 				return 'snow';
 			case 12:
 				return 'light_rain';
+			case 20:
+				return 'mostly_cloudy';
+			case 22:
+				return 'tstorm_chance';
 			default:
 				logger.warn('unknown code ', nber);
 				return 'unknown';

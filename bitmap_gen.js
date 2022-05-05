@@ -491,7 +491,7 @@ function imageGenerator(opt) {
     res.weather_icons.wind = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/wind.bmp'));
     res.weather_icons.hazy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/hazy.bmp'));
     res.weather_icons.cloudy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/cloudy.bmp'));
-    res.weather_icons.partly_cloudy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/partlysunny.bmp'));
+    res.weather_icons.partly_cloudy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/partly_cloudy.bmp'));
     res.weather_icons.mostly_sunny = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/mostly_sunny.bmp'));
     res.weather_icons.rain_sun = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain_sun.bmp'));
     res.weather_icons.rain_snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/rain_snow.bmp'));
@@ -499,6 +499,8 @@ function imageGenerator(opt) {
     res.weather_icons.light_snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/light_snow.bmp'));
     res.weather_icons.light_rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/light_rain.bmp'));
     res.weather_icons.tstorm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/tstorm.bmp'));
+    res.weather_icons.mostly_cloudy = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/mostly_cloudy.bmp'));
+    res.weather_icons.tstorm_chance = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/tstorm_chance.bmp'));
     res.weather_icons.unknown = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/unknown.bmp'));
   }
 
