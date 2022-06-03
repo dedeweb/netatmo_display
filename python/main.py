@@ -34,9 +34,9 @@ EPD_HEIGHT = 384
 
 def drawImage(imgPath, vcom):
 
-    print 'load image ' + imgPath 
+    print('load image ' + imgPath) 
     image = Image.open(imgPath)
-    print 'epd init'
+    print('epd init')
     epd = epd7in5b.EPD()
     
     hex_str = "0xAD4"
@@ -45,20 +45,20 @@ def drawImage(imgPath, vcom):
     
     epd.init(int(vcom))
 
-    print 'display image to screen'
+    print('display image to screen')
 
     epd.display_frame(epd.get_frame_buffer(image))
     
-    print 'go to sleep mode'
+    print('go to sleep mode')
 
     epd.sleep()
 
-    print 'done'
+    print('done')
     # You can get frame buffer from an image or import the buffer directly:
     #epd.display_frame(imagedata.MONOCOLOR_BITMAP)
 
 if __name__ == '__main__':
     if (len(sys.argv)!= 3) : 
-        print 'wrong number of arguments'
+        print('wrong number of arguments')
     else :
         drawImage(sys.argv[1], sys.argv[2])

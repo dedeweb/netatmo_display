@@ -4,3 +4,4 @@ out.bmp
 debug
 auth.json
 config.json
+__pycache__
