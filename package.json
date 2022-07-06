@@ -19,7 +19,7 @@
     "epoll": "^2.0.1",
     "express": "^4.16.3",
     "lodash": "^4.17.4",
-    "moment": "^2.19.2",
+    "moment": "^2.29.4",
     "onoff": "^1.1.9",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
