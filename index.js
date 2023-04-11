@@ -109,9 +109,6 @@ const led = require(path.join(__dirname, 'led'))({
 const meteoblue_ws = require(path.join(__dirname, 'meteoblue_ws'))({
 	logger: logger
 });
-const darksky_ws = require(path.join(__dirname, 'darksky_ws'))({
-	logger: logger
-});
 
 const api_server = require(path.join(__dirname, 'api_server'))({
 	logger: logger,
@@ -140,7 +137,7 @@ logger.info('script launch after', getTimespan());
 
 //set global working var
 var previous_data = null;
-var last_darksky_update = null;
+var last_weather_update = null;
 var noise_values = [];
 var noise_avg_prev = 0;
 var noise_avg_curr = 0;
@@ -224,21 +221,15 @@ function refresh(triggerNextUpdate) {
 			fail_count = 0;
 			if (shouldUpdateForecast()) {
 				logger.info('updating forecast...');
-				return darksky_ws.getData().then(function (data_darksky) {
-					logger.info('darksky data received after', getTimespan());
-					last_darksky_update = moment();
-					return meteoblue_ws.getData(data_darksky).then(function (data_meteoblue) {
-						logger.info('meteoblue data received after', getTimespan());
-						bmp_gen.drawImage(data_netatmo, data_meteoblue);
-						return getVcomFromTemp(data_netatmo.main_room.temp);
-					}).catch(function (e) {
-						logger.warn('cannot load data from meteoblue');
-						logger.warn(e);
-						bmp_gen.drawImage(data_netatmo, data_darksky);
-						return getVcomFromTemp(data_netatmo.main_room.temp);
-					});
+				
+				return meteoblue_ws.getData().then(function (data_meteoblue) {
+					logger.info('meteoblue data received after', getTimespan());
+					last_weather_update = moment();
+					bmp_gen.drawImage(data_netatmo, data_meteoblue);
+					return getVcomFromTemp(data_netatmo.main_room.temp);
 				}).catch(function (e) {
-					logger.error('error getting forecast ! ', e);
+					logger.warn('cannot load data from meteoblue');
+					logger.warn(e);
 					bmp_gen.drawImage(data_netatmo, null);
 					return getVcomFromTemp(data_netatmo.main_room.temp);
 				});
@@ -355,7 +346,7 @@ function getTimespan() {
 
 function shouldUpdateForecast() {
 	let curDate = moment();
-	if (!last_darksky_update) {
+	if (!last_weather_update) {
 		return true;
 	}
 
@@ -380,7 +371,7 @@ function shouldUpdateForecast() {
 		logger.debug('index', i, 'between', beforeDate.format(), 'and', afterDate.format());
 
 		if (curDate.isBetween(beforeDate, afterDate)) {
-			if (!last_darksky_update.isBetween(beforeDate, afterDate)) {
+			if (!last_weather_update.isBetween(beforeDate, afterDate)) {
 				// we update if current time is between two dates, but not last updateDime				
 				return true;
 			}

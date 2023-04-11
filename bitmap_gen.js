@@ -14,7 +14,7 @@ function imageGenerator(opt) {
 
   const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 
-  
+
   addDrawTextRightFunction();
   const led = require(path.join(__dirname, 'led'))({
     logger: logger
@@ -42,7 +42,7 @@ function imageGenerator(opt) {
   // private functions
   function drawImage(data_netatmo, data_forecast) {
     led.goBusy();
-    
+
     if (!data_forecast && fs.existsSync(outputFile)) {
       logger.info('partial refresh : refresh only netatmo data. ')
       //start from previous bmp
@@ -60,7 +60,7 @@ function imageGenerator(opt) {
     if (data_netatmo.ext) {
       drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max, data_netatmo.ext.hum);
     }
-    
+
     if (data_netatmo.main_room) {
       drawCol(160,
         data_netatmo.main_room.temp,
@@ -95,7 +95,7 @@ function imageGenerator(opt) {
         data_netatmo.room_2.temp_min,
         data_netatmo.room_2.temp_max);
     }
-    
+
 
     drawDate(data_netatmo.time);
 
@@ -114,8 +114,8 @@ function imageGenerator(opt) {
   }
 
   function drawEphemerides(sunrise, sunset) {
-    let sunriseTxt = moment('' + sunrise, 'X').format('HH:mm');
-    let sunsetTxt = moment('' + sunset, 'X').format('HH:mm');
+    let sunriseTxt = moment(sunrise).format('HH:mm');
+    let sunsetTxt = moment(sunset).format('HH:mm');
 
     bitmap.drawBitmap(res.icons.sunrise, 3, 153);
     bitmap.drawText(res.font.black_18, sunriseTxt, 30, 155);
@@ -124,7 +124,7 @@ function imageGenerator(opt) {
   }
 
   function drawForecastDay(x, y, data) {
-    let momentObj = moment('' + data.time, 'X');
+    let momentObj = moment(data.time);
     let day = momentObj.format('ddd DD').toUpperCase();
     let isSunday = momentObj.format('d') === '0';
 
@@ -157,39 +157,49 @@ function imageGenerator(opt) {
     bitmap.drawTextRight(res.font.black_18, '' + data.wind, x + 40, y + 110);
     bitmap.drawBitmap(res.icons.kph, x + 45, y + 110);
     //bitmap.drawText(fontBlack, data.avewind.dir, x+25, y+100);
-    
 
-    
-    
-    if (data.precip_prob > 0 && (data.rain_qty > 0 || data.snow_qty > 0 ) ) {
-      let horizLineWidth = isSunday? 91 : 89;
-      drawHorizDotLine(x+1,  y + 130, horizLineWidth);
-      if( data.rain_hourly && data.rain_hourly.length > 0 && data.rain_hourly.reduce((a,b) => a+b) > 0 ) {
-        drawHourlyRain(data.rain_hourly, x+20,  y + 133);
-      } else {
-        drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
+
+
+
+    if (data.rain_qty > 0 || data.snow_qty > 0) {
+      let horizLineWidth = isSunday ? 91 : 89;
+      drawHorizDotLine(x + 1, y + 130, horizLineWidth);
+      let centerVertical = true;
+      if (data.rain_hourly && data.rain_hourly.length > 0 && data.rain_hourly.reduce((a, b) => a + b) > 0) {
+        drawHourlyRain(data.rain_hourly, x + 20, y + 133);
+        centerVertical = false;
       }
+      //  else {
+      //   drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
+      // }
 
-      
+      if (data.rain_min && data.rain_max) {
+        let vOffset = centerVertical ? -7 : 0;
+        let vOffsetDrop = centerVertical ? -2 : 0;
 
-      if (data.snow_qty > 0) {
+        bitmap.drawBitmap(res.icons.rain, x + 4, y + 142 + vOffsetDrop);
+        bitmap.drawTextRight(res.font.black_18, data.rain_min + ' -' + data.rain_max, x + 61, y + 147 + vOffset);
+        bitmap.drawBitmap(res.icons.mm, x + 66, y + 147 + vOffset);
+
+
+      } else if (data.snow_qty > 0) {
         bitmap.drawBitmap(res.icons.snow, x + 5, y + 141);
-        bitmap.drawTextRight(res.font.black_18, data.snow_qty + '' , x + 40,y + 147);
+        bitmap.drawTextRight(res.font.black_18, data.snow_qty + '', x + 40, y + 147);
         bitmap.drawBitmap(res.icons.cm, x + 45, y + 147);
-      }  else if (data.rain_qty > 0) {
-        bitmap.drawBitmap(res.icons.rain, x + 4,  y + 142 );
-        bitmap.drawTextRight(res.font.black_18, data.rain_qty + '' , x + 40,  y + 147);
-        bitmap.drawBitmap(res.icons.mm, x + 45,y + 147);
+      } else if (data.rain_qty > 0) {
+        bitmap.drawBitmap(res.icons.rain, x + 4, y + 142);
+        bitmap.drawTextRight(res.font.black_18, data.rain_qty + '', x + 40, y + 147);
+        bitmap.drawBitmap(res.icons.mm, x + 45, y + 147);
       }
-      
-      drawHorizDotLine(x+1,  y + 165, horizLineWidth);
+
+      drawHorizDotLine(x + 1, y + 165, horizLineWidth);
     }
-    
-    if(data.predictability) {
-       bitmap.drawBitmap(res.icons.predic, x + 5,  y + 175);
-       drawPercentBar(data.predictability, x + 25,  y + 175, 55, 15, data.predictability < 0.5);
+
+    if (data.predictability) {
+      bitmap.drawBitmap(res.icons.predic, x + 5, y + 175);
+      drawPercentBar(data.predictability, x + 25, y + 175, 55, 15, data.predictability < 0.5);
     }
-    
+
     return colWidth;
   }
 
@@ -230,22 +240,22 @@ function imageGenerator(opt) {
     } else if (temp_trend === 'stable') {
       trendIcon = res.icons.arrow_right_black;
     }
-    
+
     if (trendIcon) {
-      bitmap.drawBitmap(trendIcon, 125, 55);  
+      bitmap.drawBitmap(trendIcon, 125, 55);
     }
-    
+
 
     bitmap.drawBitmap(res.icons.arrow_down_black, 20, 82);
     bitmap.drawText(res.font.black_18, '' + temp_min + ' °', 35, 82);
 
     bitmap.drawBitmap(res.icons.arrow_top_red, 90, 87);
     bitmap.drawText(res.font.red_18, '' + temp_max + ' °', 105, 82);
-    
+
     //hum
-    bitmap.drawTextRight(res.font.black_36, '' + hum,  90, 108);
-    bitmap.drawText(res.font.black_18, "%",  95, 111);  
-    
+    bitmap.drawTextRight(res.font.black_36, '' + hum, 90, 108);
+    bitmap.drawText(res.font.black_18, "%", 95, 111);
+
 
   }
 
@@ -274,9 +284,9 @@ function imageGenerator(opt) {
       // bitmap.drawFilledRect(x + 1, 66, 158, 43, null, color.red);
     } else {
       bitmap.drawTextRight(res.font.black_36, '' + hum, x + 90, 68);
-      bitmap.drawText(res.font.black_18, "%", x + 95, 71);  
+      bitmap.drawText(res.font.black_18, "%", x + 95, 71);
     }
-    
+
     //co2 = 1200;
     //co2
     if (co2_warning) {
@@ -289,13 +299,13 @@ function imageGenerator(opt) {
 
     } else {
       bitmap.drawTextRight(res.font.black_36, '' + co2, x + 90, 107);
-      bitmap.drawText(res.font.black_18, "ppm", x + 95, 109);  
+      bitmap.drawText(res.font.black_18, "ppm", x + 95, 109);
     }
-    
+
     //noise
     if (noise) {
       if (noise_warning) {
-        drawRoundedBox(x+2, 145, 156, 37, color.red);
+        drawRoundedBox(x + 2, 145, 156, 37, color.red);
         //bitmap.drawFilledRect(x+2, 145, 156,37, color.red, color.white);
         //bitmap.drawFilledRect(x+3, 146, 154,35, color.red, color.white);
         //bitmap.drawFilledRect(x + 1, 143, 158, 40, null, color.red);
@@ -303,9 +313,9 @@ function imageGenerator(opt) {
         bitmap.drawText(res.font.red_18, "dB", x + 95, 149);
       } else {
         bitmap.drawTextRight(res.font.black_36, '' + noise, x + 90, 146);
-        bitmap.drawText(res.font.black_18, "dB", x + 95, 149);  
+        bitmap.drawText(res.font.black_18, "dB", x + 95, 149);
       }
-      
+
     }
   }
 
@@ -337,63 +347,63 @@ function imageGenerator(opt) {
       pixon = !pixon;
     }
   }
-  
+
   function drawRoundedBox(left, top, width, height, fillcolor) {
     bitmap.drawFilledRect(left, top, width, height, fillcolor, color.white);
-    bitmap.drawFilledRect(left +1, top + 1, width -2, height -2, fillcolor, color.white);
-    
+    bitmap.drawFilledRect(left + 1, top + 1, width - 2, height - 2, fillcolor, color.white);
+
     //top left corner
-    bitmap.drawFilledRect(left , top , 4, 1, null, color.white);
-    bitmap.drawFilledRect(left , top , 1, 4, null, color.white);
-    bitmap.setPixel(left + 1 , top + 1 , color.white);
-    bitmap.drawFilledRect(left + 2 , top + 2 , 3, 1, null, fillcolor);
-    bitmap.drawFilledRect(left +2 , top +2, 1, 3, null, fillcolor);
-    
+    bitmap.drawFilledRect(left, top, 4, 1, null, color.white);
+    bitmap.drawFilledRect(left, top, 1, 4, null, color.white);
+    bitmap.setPixel(left + 1, top + 1, color.white);
+    bitmap.drawFilledRect(left + 2, top + 2, 3, 1, null, fillcolor);
+    bitmap.drawFilledRect(left + 2, top + 2, 1, 3, null, fillcolor);
+
     //top right corner
-    bitmap.drawFilledRect(left + width - 4, top , 4, 1, null, color.white);
-    bitmap.drawFilledRect(left + width - 1, top , 1, 4, null, color.white);
-    bitmap.setPixel(left + width - 2 , top + 1 , color.white);
-    bitmap.drawFilledRect(left + width - 5 , top + 2 , 3, 1, null, fillcolor);
-    bitmap.drawFilledRect(left + width - 3 , top + 2, 1, 3, null, fillcolor);
-    
+    bitmap.drawFilledRect(left + width - 4, top, 4, 1, null, color.white);
+    bitmap.drawFilledRect(left + width - 1, top, 1, 4, null, color.white);
+    bitmap.setPixel(left + width - 2, top + 1, color.white);
+    bitmap.drawFilledRect(left + width - 5, top + 2, 3, 1, null, fillcolor);
+    bitmap.drawFilledRect(left + width - 3, top + 2, 1, 3, null, fillcolor);
+
     //down left corner
-    bitmap.drawFilledRect(left , top + height - 1 , 4, 1, null, color.white);
-    bitmap.drawFilledRect(left , top + height - 4, 1, 4, null, color.white);
-    bitmap.setPixel(left + 1 , top + height - 2 , color.white);
-    bitmap.drawFilledRect(left + 2 ,top + height - 3 , 3, 1, null, fillcolor);
-    bitmap.drawFilledRect(left + 2 , top + height - 5, 1, 3, null, fillcolor);
-    
+    bitmap.drawFilledRect(left, top + height - 1, 4, 1, null, color.white);
+    bitmap.drawFilledRect(left, top + height - 4, 1, 4, null, color.white);
+    bitmap.setPixel(left + 1, top + height - 2, color.white);
+    bitmap.drawFilledRect(left + 2, top + height - 3, 3, 1, null, fillcolor);
+    bitmap.drawFilledRect(left + 2, top + height - 5, 1, 3, null, fillcolor);
+
     //down right corner
-    bitmap.drawFilledRect(left + width - 4 , top + height - 1 , 4, 1, null, color.white);
-    bitmap.drawFilledRect(left + width - 1 , top + height - 4, 1, 4, null, color.white);
-    bitmap.setPixel(left + width - 2 , top + height - 2 , color.white);
-    bitmap.drawFilledRect(left + width - 5, top + height - 3 , 3, 1, null, fillcolor);
+    bitmap.drawFilledRect(left + width - 4, top + height - 1, 4, 1, null, color.white);
+    bitmap.drawFilledRect(left + width - 1, top + height - 4, 1, 4, null, color.white);
+    bitmap.setPixel(left + width - 2, top + height - 2, color.white);
+    bitmap.drawFilledRect(left + width - 5, top + height - 3, 3, 1, null, fillcolor);
     bitmap.drawFilledRect(left + width - 3, top + height - 5, 1, 3, null, fillcolor);
-    
+
     //bitmap.setPixel(left + width - 1, top + height - 1, color.white);
   }
-  
-  function drawHourlyRain(data, left,  top) {
+
+  function drawHourlyRain(data, left, top) {
     //draw frame
     //bitmap.drawFilledRect(left +1, top, 64 , 1, color.black, color.black);
-    
-    bitmap.drawFilledRect(left +1, top + 9 , 63 , 1, color.black, color.black);
-    bitmap.drawFilledRect(left , top +1 , 1 , 8, color.black, color.black);
-    bitmap.drawFilledRect(left +64 , top +1, 1 , 8, color.black, color.black);
+
+    bitmap.drawFilledRect(left + 1, top + 9, 63, 1, color.black, color.black);
+    bitmap.drawFilledRect(left, top + 1, 1, 8, color.black, color.black);
+    bitmap.drawFilledRect(left + 64, top + 1, 1, 8, color.black, color.black);
     //draw inside
-    let x=left+1;
+    let x = left + 1;
     // data =  [4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4];
-    for(let rain of data) {
-      bitmap.drawFilledRect(x, top + 9 - rain*2, 3, rain*2, color.red, color.red  );
-      x+=3;
+    for (let rain of data) {
+      bitmap.drawFilledRect(x, top + 9 - rain * 2, 3, rain * 2, color.red, color.red);
+      x += 3;
     }
-    
-    bitmap.setPixel(left+ 6*3 + 2 ,top +10, color.black);
-    bitmap.setPixel(left+ 10*3 + 2 ,top +10, color.black);
-    bitmap.setPixel(left+ 16*3 + 2 ,top +10, color.black);
-    bitmap.setPixel(left+ 6*3 + 2 ,top +11, color.black);
-    bitmap.setPixel(left+ 10*3 + 2 ,top +11, color.black);
-    bitmap.setPixel(left+ 16*3 + 2 ,top +11, color.black);
+
+    bitmap.setPixel(left + 6 * 3 + 2, top + 10, color.black);
+    bitmap.setPixel(left + 10 * 3 + 2, top + 10, color.black);
+    bitmap.setPixel(left + 16 * 3 + 2, top + 10, color.black);
+    bitmap.setPixel(left + 6 * 3 + 2, top + 11, color.black);
+    bitmap.setPixel(left + 10 * 3 + 2, top + 11, color.black);
+    bitmap.setPixel(left + 16 * 3 + 2, top + 11, color.black);
   }
   /*
   function drawDotBox(left, top, width, height, fillcolor) {
@@ -417,21 +427,21 @@ function imageGenerator(opt) {
   */
   function drawPercentBar(percent, left, top, width, height, is_red) {
     bitmap.drawFilledRect(left + 1, top, width - 2, 1, color.black, color.black);
-    bitmap.drawFilledRect(left + 1, top + height - 1 , width - 2, 1, color.black, color.black);
-    
-    bitmap.drawFilledRect(left, top +1 , 1, height - 2, color.black, color.black);
-    bitmap.drawFilledRect(left + width -1, top +1, 1, height - 2, color.black, color.black);
-    
+    bitmap.drawFilledRect(left + 1, top + height - 1, width - 2, 1, color.black, color.black);
+
+    bitmap.drawFilledRect(left, top + 1, 1, height - 2, color.black, color.black);
+    bitmap.drawFilledRect(left + width - 1, top + 1, 1, height - 2, color.black, color.black);
+
     let inside_color = color.black;
-    if(is_red) {
+    if (is_red) {
       inside_color = color.red;
     }
-    
+
     for (let i = 1; i < height - 1; i++) {
-      bitmap.drawFilledRect(left +1, top + i, parseFloat(width-2) * percent , 1, inside_color, inside_color);
+      bitmap.drawFilledRect(left + 1, top + i, parseFloat(width - 2) * percent, 1, inside_color, inside_color);
     }
   }
-  
+
   function loadRes() {
     logger.info('loading bitmaps and fonts');
     res.font = {};
@@ -455,7 +465,7 @@ function imageGenerator(opt) {
     res.font.black_36 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
     res.font.black_36.setSize(36);
     res.font.black_36.setColor(color.black);
-    
+
     res.font.red_36 = new bmp_lib.Font(path.join(__dirname, 'font/proxima.json'));
     res.font.red_36.setSize(36);
     res.font.red_36.setColor(color.red);
@@ -505,7 +515,7 @@ function imageGenerator(opt) {
   }
 
   function addDrawTextRightFunction() {
-    bmp_lib.BMPBitmap.prototype.drawTextRight = function(font, text, x, y) {
+    bmp_lib.BMPBitmap.prototype.drawTextRight = function (font, text, x, y) {
       let fontBitmap = font.getBitmap();
       let lineHeight = font.getLineHeight();
       let fontDetails = font.getDetails();
