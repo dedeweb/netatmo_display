@@ -509,7 +509,7 @@ function shouldUpdateNoise(lastVal, newVal) {
 
 function getDataFromNetatmo() {
 	let accessToken = '';
-	let formData = Object.assign({ grant_type: 'password', scope: 'read_station read_thermostat write_thermostat' }, config.netatmo_auth);
+	let formData = Object.assign({ grant_type: 'resfresh_token' }, config.netatmo_auth);
 
 	return request({
 		method: 'POST',
