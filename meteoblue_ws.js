@@ -22,10 +22,10 @@ function wsMeteoblue(opt) {
 
 	async function getData(previous_data) {
 		let latLon = await getLatLong();
-		// console.log(latLon);
 		$ = await getCheerioObj();
 		let weatherObj = previous_data;
 		if (!weatherObj) {
+			logger.info('create weather obj');
 			weatherObj = {
 				sunset: latLon ? latLon.sunset : null, // data_darksky.daily.data[0].sunsetTime,
 				sunrise: latLon ? latLon.sunrise : null,// data_darksky.daily.data[0].sunriseTime,
@@ -103,17 +103,21 @@ function wsMeteoblue(opt) {
 
 				weatherObj.days[index].sun = $(this).find('.data .tab-sun').text().replace('h', '').trim();
 
-				let predicClass = $(this).find('.tab-predictability .meter-inner.predictability').attr('class');
-				let predicElt = /.*class-(\d)/gm.exec(predicClass);
-				if (predicElt && predicElt.length > 0) {
-					let predic = predicElt[1];
-					weatherObj.days[index].predictability = parseFloat(predic) / 5.0;
-					logger.debug('predictability', weatherObj.days[index].predictability);
-				} else {
-					logger.warn('cannot parse predictability ! ');
-					logger.verbose('predic class : ' + predicClass);
-					logger.verbose($(this).html());
-				}
+				let predicTotal = $(this).find('.tab-predictability .predictability').length;
+				let predic = $(this).find('.tab-predictability .high-predictability').length;
+				weatherObj.days[index].predictability = predic / predicTotal;
+
+				// let predicElt = /.*class-(\d)/gm.exec(predicClass);
+
+				// if (predicElt && predicElt.length > 0) {
+				// 	let predic = predicElt[1];
+				// 	weatherObj.days[index].predictability = parseFloat(predic) / 5.0;
+				// 	logger.debug('predictability', weatherObj.days[index].predictability);
+				// } else {
+				// 	logger.warn('cannot parse predictability ! ');
+				// 	logger.verbose('predic class : ' + predicClass);
+				// 	logger.verbose($(this).html());
+				// }
 
 				try {
 					let pic_src = $(this).find('.weather .day .weather-pictogram').attr('src'); //like  https://static.meteoblue.com/website/images/picto/06_iday.svg
@@ -161,7 +165,7 @@ function wsMeteoblue(opt) {
 
 
 	function getCheerioObj() {
-
+		logger.info(`loading ${config.weather.mb_url}...`);
 		return request(config.weather.mb_url)
 			.then(function (html) {
 				return cheerio.load(html);

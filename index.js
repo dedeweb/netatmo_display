@@ -42,8 +42,10 @@ const morning_hour = 6; //trigger on ext. temp only after this hour.
 //forecast update times 
 //for meteoblue : https://content.meteoblue.com/en/research-development/data-sources/weather-modelling/model-run
 const forecast_update_times = ['06:00:00', '08:15:00 00Z', '18:30:00', '20:15:00 00Z']
-
-var logger = new (winston.Logger)({
+const log_format = winston.format.printf(({ level, message, label, timestamp }) => {
+	return `[${level}]  ${message}`;
+});
+var logger = winston.createLogger({
 	transports: [
 		new winston.transports.Console({
 			level: 'debug',
@@ -53,6 +55,11 @@ var logger = new (winston.Logger)({
 			},
 			handleExceptions: true,
 			humanReadableUnhandledException: true,
+			format: winston.format.combine(
+				winston.format.timestamp(),
+				winston.format.colorize(),
+				log_format
+			)
 		}),
 		new winston.transports.File({
 			name: 'file#info',
@@ -67,7 +74,11 @@ var logger = new (winston.Logger)({
 			humanReadableUnhandledException: true,
 			maxsize: 1000000,
 			maxFiles: 5,
-			tailable: true
+			tailable: true,
+			format: winston.format.combine(
+				winston.format.timestamp(),
+				log_format
+			)
 		}),
 		new winston.transports.File({
 			name: 'file#error',
@@ -82,7 +93,11 @@ var logger = new (winston.Logger)({
 			humanReadableUnhandledException: true,
 			maxsize: 1000000,
 			maxFiles: 5,
-			tailable: true
+			tailable: true,
+			format: winston.format.combine(
+				winston.format.timestamp(),
+				log_format
+			)
 		})
 	]
 });
@@ -509,7 +524,7 @@ function shouldUpdateNoise(lastVal, newVal) {
 
 function getDataFromNetatmo() {
 	let accessToken = '';
-	let formData = Object.assign({ grant_type: 'resfresh_token' }, config.netatmo_auth);
+	let formData = Object.assign({ grant_type: 'refresh_token', scope: 'read_station read_thermostat write_thermostat' }, config.netatmo_auth);
 
 	return request({
 		method: 'POST',
