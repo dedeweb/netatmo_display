@@ -42,9 +42,7 @@ const morning_hour = 6; //trigger on ext. temp only after this hour.
 //forecast update times 
 //for meteoblue : https://content.meteoblue.com/en/research-development/data-sources/weather-modelling/model-run
 const forecast_update_times = ['06:00:00', '08:15:00 00Z', '18:30:00', '20:15:00 00Z']
-const log_format = winston.format.printf(({ level, message, label, timestamp }) => {
-	return `[${level}]  ${message}`;
-});
+
 var logger = new (winston.Logger)({
 	transports: [
 		new winston.transports.Console({
