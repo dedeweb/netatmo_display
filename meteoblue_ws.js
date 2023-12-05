@@ -149,10 +149,25 @@ function wsMeteoblue(opt) {
 		if (day.rain_qty) {
 			day.rain_hourly = [];
 			$('.precip-bar-part .precip-hourly').each(function () {
-				// let precipBar = $(this).find('.precip-bar');
+				let precipBar = $(this).find('.precip-bar');
 				let predic = 0;
-				//if(precipBar.length) {
-				predic = parseInt(/.*class-(\d)/gm.exec($(this).attr('class'))[1]);
+				try {
+					if (precipBar && precipBar.attr('style')) {
+						let height = precipBar.attr('style').match(/height:(.*)%.*/)[1];
+	
+						logger.info('height: ' + height);
+						predic = Math.round((height / 100) * 4);
+						logger.info('predic ' + predic);
+					}
+				}
+				catch(e) {
+					console.log(e);
+				}
+				
+
+				// let predic = 0;
+				// //if(precipBar.length) {
+				// predic = parseInt(/.*class-(\d)/gm.exec($(this).attr('class'))[1]);
 				//}
 				day.rain_hourly.push(predic);
 			});
