@@ -35,7 +35,7 @@ const trigger_hum = 5;
 
 //heating
 const heating_off_trigger = 20.0;
-const heating_on_trigger = 19.5;
+const heating_on_trigger = 19.0;
 
 const morning_hour = 6; //trigger on ext. temp only after this hour. 
 
@@ -179,12 +179,12 @@ function refresh(triggerNextUpdate) {
 	let nextUpdateTimeoutSet = false;
 	getDataFromNetatmo().then(function (data_netatmo) {
 		if (data_netatmo) {
-			logger.info('netatmo data received after', getTimespan());
+			logger.info('netatmo data received after' + getTimespan());
 
 			let lastStoreTimeSpanMs = moment().diff(moment('' + data_netatmo.last_store_time, 'X')),
 				lastStoreTimeSpan = moment(lastStoreTimeSpanMs);
 
-			logger.info('last store date was', lastStoreTimeSpan.minutes() + 'm' + lastStoreTimeSpan.seconds() + 's ago');
+			logger.info('last store date was ' + lastStoreTimeSpan.minutes() + 'm' + lastStoreTimeSpan.seconds() + 's ago');
 
 			if (triggerNextUpdate) {
 				let shouldAbort = false;
@@ -315,7 +315,7 @@ function sendToScreen(vcom) {
 			clearTimeout(id);
 		}, cmdTimeout);
 	});
-	logger.info('vcom is', vcom);
+	logger.info('vcom is ' + vcom);
 	logger.info('spawning python command');
 	let promiseSpawn;
 	if (PROD) {
@@ -328,13 +328,13 @@ function sendToScreen(vcom) {
 	promiseSpawn.childProcess.stdout.on('data', function (data) {
 		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
 		if (dataStr) {
-			logger.info('py stdout:', dataStr);
+			logger.info('py stdout: ' +  dataStr);
 		}
 	});
 	promiseSpawn.childProcess.stderr.on('data', function (data) {
 		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
 		if (dataStr) {
-			logger.info('py stderr:', dataStr);
+			logger.info('py stderr: ' + dataStr);
 		}
 	});
 	let spawnFinished = false;
@@ -413,14 +413,14 @@ function addNoiseToTab(noise) {
 	while (noise_values.length > noise_average_smoothing) {
 		noise_values.shift();
 	}
-	logger.info('noise values', JSON.stringify(noise_values));
+	logger.info('noise values ' + JSON.stringify(noise_values));
 
 }
 
 function commitNoiseValues() {
 	noise_avg_prev = noise_avg_curr;
 	noise_avg_curr = getNewNoiseAvg();
-	logger.info('new noise average prev=', noise_avg_prev, 'curr=', noise_avg_curr);
+	logger.info('new noise average prev='+ noise_avg_prev + ' curr=' + noise_avg_curr);
 }
 
 function getNewNoiseAvg() {
