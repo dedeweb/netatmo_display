@@ -45,7 +45,7 @@ const forecast_update_times = ['06:00:00', '08:15:00 00Z', '18:30:00', '20:15:00
 const log_format = winston.format.printf(({ level, message, label, timestamp }) => {
 	return `[${level}]  ${message}`;
 });
-var logger = winston.createLogger({
+var logger = new (winston.Logger)({
 	transports: [
 		new winston.transports.Console({
 			level: 'debug',
@@ -55,11 +55,6 @@ var logger = winston.createLogger({
 			},
 			handleExceptions: true,
 			humanReadableUnhandledException: true,
-			format: winston.format.combine(
-				winston.format.timestamp(),
-				winston.format.colorize(),
-				log_format
-			)
 		}),
 		new winston.transports.File({
 			name: 'file#info',
@@ -74,11 +69,7 @@ var logger = winston.createLogger({
 			humanReadableUnhandledException: true,
 			maxsize: 1000000,
 			maxFiles: 5,
-			tailable: true,
-			format: winston.format.combine(
-				winston.format.timestamp(),
-				log_format
-			)
+			tailable: true
 		}),
 		new winston.transports.File({
 			name: 'file#error',
@@ -93,11 +84,7 @@ var logger = winston.createLogger({
 			humanReadableUnhandledException: true,
 			maxsize: 1000000,
 			maxFiles: 5,
-			tailable: true,
-			format: winston.format.combine(
-				winston.format.timestamp(),
-				log_format
-			)
+			tailable: true
 		})
 	]
 });
