@@ -110,7 +110,7 @@ function imageGenerator(opt) {
     }
 
     bitmap.save(outputFile);
-    logger.info('image rendered after', getTimespan());
+    logger.info('image rendered after ' +  getTimespan());
   }
 
   function drawEphemerides(sunrise, sunset) {

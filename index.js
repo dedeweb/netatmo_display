@@ -179,7 +179,7 @@ function refresh(triggerNextUpdate) {
 	let nextUpdateTimeoutSet = false;
 	getDataFromNetatmo().then(function (data_netatmo) {
 		if (data_netatmo) {
-			logger.info('netatmo data received after' + getTimespan());
+			logger.info('netatmo data received after ' + getTimespan());
 
 			let lastStoreTimeSpanMs = moment().diff(moment('' + data_netatmo.last_store_time, 'X')),
 				lastStoreTimeSpan = moment(lastStoreTimeSpanMs);
@@ -238,7 +238,7 @@ function refresh(triggerNextUpdate) {
 				logger.info('updating forecast...');
 
 				return meteoblue_ws.getData().then(function (data_meteoblue) {
-					logger.info('meteoblue data received after', getTimespan());
+					logger.info('meteoblue data received after ' + getTimespan());
 					last_weather_update = moment();
 					bmp_gen.drawImage(data_netatmo, data_meteoblue);
 					return getVcomFromTemp(data_netatmo.main_room.temp);
@@ -341,12 +341,12 @@ function sendToScreen(vcom) {
 	return Promise.race([
 		promiseSpawn.then(function (result) {
 			spawnFinished = true;
-			logger.info('image displayed after', getTimespan());
+			logger.info('image displayed after ' + getTimespan());
 		}),
 		timeout.then(function () {
 			promiseSpawn.childProcess.kill();
 			if (!spawnFinished) {
-				logger.warn('image display timeout after', getTimespan());
+				logger.warn('image display timeout after ' + getTimespan());
 			} else {
 				logger.debug('timeout promise finished');
 			}
