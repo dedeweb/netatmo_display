@@ -13,16 +13,16 @@
   "author": "denis messié",
   "license": "GPL-3.0",
   "dependencies": {
-    "bitmap-manipulation": "^2.0.0",
+    "bitmap-manipulation": "git+https://github.com/dedeweb/mono-bitmap.git",
     "cheerio": "^1.0.0-rc.2",
     "child-process-promise": "^2.2.1",
-    "epoll": "^2.0.1",
+    "epoll": "^4.0.1",
     "express": "^4.16.3",
     "lodash": "^4.17.4",
     "moment": "^2.19.2",
-    "onoff": "^1.1.9",
+    "onoff": "^6.0.3",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
-    "winston": "^2.4.0"
+    "winston": "^3.10.0"
   }
 }
