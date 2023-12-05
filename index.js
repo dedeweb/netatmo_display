@@ -236,7 +236,7 @@ function refresh(triggerNextUpdate) {
 			fail_count = 0;
 			if (shouldUpdateForecast()) {
 				logger.info('updating forecast...');
-				
+
 				return meteoblue_ws.getData().then(function (data_meteoblue) {
 					logger.info('meteoblue data received after', getTimespan());
 					last_weather_update = moment();
@@ -522,105 +522,162 @@ function shouldUpdateNoise(lastVal, newVal) {
 	}
 }
 
-function getDataFromNetatmo() {
-	let accessToken = '';
+
+
+
+
+
+async function getDataFromNetatmo() {
+
+	let data = await netatmoGetStationData();
+
+	let devices = JSON.parse(data).body.devices[0];
+	let capt_ext = _.find(devices.modules, {
+		_id: config.netatmo_config.weather.outside.id
+	});
+	let capt_room_1 = _.find(devices.modules, {
+		_id: config.netatmo_config.weather.room_1.id
+	});
+	let capt_room_2 = _.find(devices.modules, {
+		_id: config.netatmo_config.weather.room_2.id
+	});
+
+	let returnVal = {
+		last_store_time: devices.last_status_store,
+		time: devices.dashboard_data.time_utc,
+
+	};
+	if (capt_ext && capt_ext.dashboard_data) {
+		returnVal.ext = {
+			temp: capt_ext.dashboard_data.Temperature,
+			hum: capt_ext.dashboard_data.Humidity,
+			temp_min: capt_ext.dashboard_data.min_temp,
+			temp_max: capt_ext.dashboard_data.max_temp,
+			temp_trend: capt_ext.dashboard_data.temp_trend
+		};
+	}
+	if (devices && devices.dashboard_data) {
+		returnVal.main_room = {
+			temp: devices.dashboard_data.Temperature,
+			hum: devices.dashboard_data.Humidity,
+			hum_warning: isHumWarning(devices.dashboard_data.Humidity),
+			temp_min: devices.dashboard_data.min_temp,
+			temp_max: devices.dashboard_data.max_temp,
+			temp_trend: devices.dashboard_data.temp_trend,
+			co2: devices.dashboard_data.CO2,
+			co2_warning: isCO2Warning(devices.dashboard_data.CO2),
+			noise: devices.dashboard_data.Noise,
+			noise_warning: isNoiseWarning(noise_avg_curr)
+		};
+
+		if (config.netatmo_config.heating) {
+			if (heating_off_trigger && returnVal.main_room.temp > config.netatmo_config.heating.upper_temp) {
+				logger.info('[heating] turning off heating');
+				netatmoSetThermMode(config.netatmo_config.heating.home_id, 'away');
+			} else if (heating_on_trigger && returnVal.main_room.temp < config.netatmo_config.heating.lower_temp) {
+				logger.info('[heating] turning on heating');
+				netatmoSetThermMode(config.netatmo_config.heating.home_id, 'schedule');
+			} else {
+				logger.info('[heating] ' + returnVal.main_room.temp + ' is between ' + config.netatmo_config.heating.lower_temp + ' and ' + config.netatmo_config.heating.upper_temp + ': do nothing');
+			}
+		}
+
+
+	}
+	if (capt_room_1 && capt_room_1.dashboard_data) {
+		returnVal.room_1 = {
+			temp: capt_room_1.dashboard_data.Temperature,
+			hum: capt_room_1.dashboard_data.Humidity,
+			hum_warning: isHumWarning(capt_room_1.dashboard_data.Humidity),
+			temp_min: capt_room_1.dashboard_data.min_temp,
+			temp_max: capt_room_1.dashboard_data.max_temp,
+			temp_trend: capt_room_1.dashboard_data.temp_trend,
+			co2: capt_room_1.dashboard_data.CO2,
+			co2_warning: isCO2Warning(capt_room_1.dashboard_data.CO2)
+		};
+	}
+	if (capt_room_2 && capt_room_2.dashboard_data) {
+		returnVal.room_2 = {
+			temp: capt_room_2.dashboard_data.Temperature,
+			hum: capt_room_2.dashboard_data.Humidity,
+			hum_warning: isHumWarning(capt_room_2.dashboard_data.Humidity),
+			temp_min: capt_room_2.dashboard_data.min_temp,
+			temp_max: capt_room_2.dashboard_data.max_temp,
+			temp_trend: capt_room_2.dashboard_data.temp_trend,
+			co2: capt_room_2.dashboard_data.CO2,
+			co2_warning: isCO2Warning(capt_room_2.dashboard_data.CO2)
+		};
+	}
+
+
+	return returnVal;
+
+
+
+}
+
+async function netatmoRenewToken() {
+
+	logger.info('renew token...');
+
 	let formData = Object.assign({ grant_type: 'refresh_token', scope: 'read_station read_thermostat write_thermostat' }, config.netatmo_auth);
 
-	return request({
+	let data = await request({
 		method: 'POST',
 		uri: 'https://api.netatmo.com/oauth2/token',
 		form: formData
-	}).then(function (data) {
-		accessToken = JSON.parse(data).access_token;
-		return request({
-			method: 'POST',
-			uri: 'https://api.netatmo.com/api/getstationsdata?access_token=' + accessToken
-		});
-	}).then(function (data) {
-		let devices = JSON.parse(data).body.devices[0];
-		let capt_ext = _.find(devices.modules, {
-			_id: config.netatmo_config.weather.outside.id
-		});
-		let capt_room_1 = _.find(devices.modules, {
-			_id: config.netatmo_config.weather.room_1.id
-		});
-		let capt_room_2 = _.find(devices.modules, {
-			_id: config.netatmo_config.weather.room_2.id
-		});
+	});
+	let parsedData = JSON.parse(data);
 
-		let returnVal = {
-			last_store_time: devices.last_status_store,
-			time: devices.dashboard_data.time_utc,
+	config.netatmo_auth.access_token = parsedData.access_token;
+	config.netatmo_auth.refresh_token = parsedData.refresh_token;
 
-		};
-		if (capt_ext && capt_ext.dashboard_data) {
-			returnVal.ext = {
-				temp: capt_ext.dashboard_data.Temperature,
-				hum: capt_ext.dashboard_data.Humidity,
-				temp_min: capt_ext.dashboard_data.min_temp,
-				temp_max: capt_ext.dashboard_data.max_temp,
-				temp_trend: capt_ext.dashboard_data.temp_trend
-			};
-		}
-		if (devices && devices.dashboard_data) {
-			returnVal.main_room = {
-				temp: devices.dashboard_data.Temperature,
-				hum: devices.dashboard_data.Humidity,
-				hum_warning: isHumWarning(devices.dashboard_data.Humidity),
-				temp_min: devices.dashboard_data.min_temp,
-				temp_max: devices.dashboard_data.max_temp,
-				temp_trend: devices.dashboard_data.temp_trend,
-				co2: devices.dashboard_data.CO2,
-				co2_warning: isCO2Warning(devices.dashboard_data.CO2),
-				noise: devices.dashboard_data.Noise,
-				noise_warning: isNoiseWarning(noise_avg_curr)
-			};
-
-			if (config.netatmo_config.heating) {
-				if (heating_off_trigger && returnVal.main_room.temp > config.netatmo_config.heating.upper_temp) {
-					logger.info('[heating] turning off heating');
-					setThermMode(accessToken, config.netatmo_config.heating.home_id, 'away');
-				} else if (heating_on_trigger && returnVal.main_room.temp < config.netatmo_config.heating.lower_temp) {
-					logger.info('[heating] turning on heating');
-					setThermMode(accessToken, config.netatmo_config.heating.home_id, 'schedule');
-				} else {
-					logger.info('[heating] ' + returnVal.main_room.temp + ' is between ' + config.netatmo_config.heating.lower_temp + ' and ' + config.netatmo_config.heating.upper_temp + ': do nothing');
-				}
+	let prom = new Promise((resolve, reject) => {
+		fs.writeFile(path.join(__dirname, 'config.json'), JSON.stringify(config, null, 4), 'utf8', function (err) {
+			if (err) {
+				reject(err);
+			} else {
+				logger.info('token retrieved');
+				resolve();
 			}
-
-
-		}
-		if (capt_room_1 && capt_room_1.dashboard_data) {
-			returnVal.room_1 = {
-				temp: capt_room_1.dashboard_data.Temperature,
-				hum: capt_room_1.dashboard_data.Humidity,
-				hum_warning: isHumWarning(capt_room_1.dashboard_data.Humidity),
-				temp_min: capt_room_1.dashboard_data.min_temp,
-				temp_max: capt_room_1.dashboard_data.max_temp,
-				temp_trend: capt_room_1.dashboard_data.temp_trend,
-				co2: capt_room_1.dashboard_data.CO2,
-				co2_warning: isCO2Warning(capt_room_1.dashboard_data.CO2)
-			};
-		}
-		if (capt_room_2 && capt_room_2.dashboard_data) {
-			returnVal.room_2 = {
-				temp: capt_room_2.dashboard_data.Temperature,
-				hum: capt_room_2.dashboard_data.Humidity,
-				hum_warning: isHumWarning(capt_room_2.dashboard_data.Humidity),
-				temp_min: capt_room_2.dashboard_data.min_temp,
-				temp_max: capt_room_2.dashboard_data.max_temp,
-				temp_trend: capt_room_2.dashboard_data.temp_trend,
-				co2: capt_room_2.dashboard_data.CO2,
-				co2_warning: isCO2Warning(capt_room_2.dashboard_data.CO2)
-			};
-		}
-
-
-		return returnVal;
+		});
 	});
 
-	function setThermMode(token, homeid, mode) {
-		return request({
+	await prom;
+}
+
+
+async function netatmoGetStationData(tries = 3) {
+	try {
+		return await request({
+			method: 'POST',
+			uri: 'https://api.netatmo.com/api/getstationsdata?access_token=' + config.netatmo_auth.access_token
+		});
+	}
+	catch (e) {
+
+		if (e.statusCode == 403) {
+			logger.warn('error 403');
+			await netatmoRenewToken();
+			if (tries > 0) {
+				return netatmoGetStationData(tries - 1);
+			} else {
+				//no tries left
+				throw e;
+			}
+		} else {
+			logger.error('unexpected error');
+			throw e;
+		}
+
+	}
+
+}
+
+
+async function netatmoSetThermMode(homeid, mode, tries = 3) {
+	try {
+		return await request({
 			method: 'POST',
 			headers: {
 				'accept': 'application/json',
@@ -628,6 +685,21 @@ function getDataFromNetatmo() {
 			},
 			uri: 'https://api.netatmo.com/api/setthermmode?home_id=' + homeid + '&mode=' + mode
 		})
+	}
+	catch (e) {
+		logger.warning(`error ${e.statusCode}`);
+		if (e.statusCode == 403) {
+			await netatmoRenewToken();
+			if (tries > 0) {
+				return netatmoSetThermMode(tries - 1);
+			} else {
+				//no tries left
+				throw e;
+			}
+		} else {
+			logger.error('unexpected error');
+			throw e;
+		}
 	}
 }
 
