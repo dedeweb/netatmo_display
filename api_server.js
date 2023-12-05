@@ -60,11 +60,11 @@ function apiServer(opt) {
   
   app.all('*', function(req, res){
     var requestedUrl = req.protocol + '://' + req.get('Host') + req.url;
-    logger.error('[api] wrong request', req.method, requestedUrl);
+    logger.error('[api] wrong request ' + req.method + ' '+ requestedUrl);
     res.status(404).send('Not found');
   });
   
   
-  logger.info('[api] starting api server on port', port);
+  logger.info('[api] starting api server on port ' + port);
   app.listen(port);
 }
