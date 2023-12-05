@@ -33,10 +33,6 @@ const trigger_co2 = 500;
 const trigger_hum = 5;
 
 
-//heating
-const heating_off_trigger = 20.0;
-const heating_on_trigger = 19.0;
-
 const morning_hour = 6; //trigger on ext. temp only after this hour. 
 
 //forecast update times 
@@ -328,7 +324,7 @@ function sendToScreen(vcom) {
 	promiseSpawn.childProcess.stdout.on('data', function (data) {
 		let dataStr = data.toString().replace(/^\s+|\s+$/g, '');
 		if (dataStr) {
-			logger.info('py stdout: ' +  dataStr);
+			logger.info('py stdout: ' + dataStr);
 		}
 	});
 	promiseSpawn.childProcess.stderr.on('data', function (data) {
@@ -420,7 +416,7 @@ function addNoiseToTab(noise) {
 function commitNoiseValues() {
 	noise_avg_prev = noise_avg_curr;
 	noise_avg_curr = getNewNoiseAvg();
-	logger.info('new noise average prev='+ noise_avg_prev + ' curr=' + noise_avg_curr);
+	logger.info('new noise average prev=' + noise_avg_prev + ' curr=' + noise_avg_curr);
 }
 
 function getNewNoiseAvg() {
@@ -571,10 +567,10 @@ async function getDataFromNetatmo() {
 		};
 
 		if (config.netatmo_config.heating) {
-			if (heating_off_trigger && returnVal.main_room.temp > config.netatmo_config.heating.upper_temp) {
+			if (returnVal.main_room.temp > config.netatmo_config.heating.upper_temp) {
 				logger.info('[heating] turning off heating');
 				netatmoSetThermMode(config.netatmo_config.heating.home_id, 'away');
-			} else if (heating_on_trigger && returnVal.main_room.temp < config.netatmo_config.heating.lower_temp) {
+			} else if (returnVal.main_room.temp < config.netatmo_config.heating.lower_temp) {
 				logger.info('[heating] turning on heating');
 				netatmoSetThermMode(config.netatmo_config.heating.home_id, 'schedule');
 			} else {
