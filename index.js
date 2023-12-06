@@ -683,7 +683,7 @@ async function netatmoSetThermMode(homeid, mode, tries = 3) {
 		})
 	}
 	catch (e) {
-		logger.warning(`error ${e.statusCode}`);
+		logger.warn(`error ${e.statusCode}`);
 		if (e.statusCode == 403) {
 			await netatmoRenewToken();
 			if (tries > 0) {
