@@ -677,7 +677,7 @@ async function netatmoSetThermMode(homeid, mode, tries = 3) {
 			method: 'POST',
 			headers: {
 				'accept': 'application/json',
-				'Authorization': 'Bearer ' + token
+				'Authorization': 'Bearer ' + config.netatmo_auth.access_token
 			},
 			uri: 'https://api.netatmo.com/api/setthermmode?home_id=' + homeid + '&mode=' + mode
 		})
