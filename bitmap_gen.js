@@ -56,7 +56,7 @@ function imageGenerator(opt) {
       bitmap.clear(color.white);
     }
 
-    drawOutline();
+    drawOutline(data_netatmo.heating);
     if (data_netatmo.ext) {
       drawFirstCol(data_netatmo.ext.temp, data_netatmo.ext.temp_trend, data_netatmo.ext.temp_min, data_netatmo.ext.temp_max, data_netatmo.ext.hum);
     }
@@ -110,7 +110,7 @@ function imageGenerator(opt) {
     }
 
     bitmap.save(outputFile);
-    logger.info('image rendered after ' +  getTimespan());
+    logger.info('image rendered after ' + getTimespan());
   }
 
   function drawEphemerides(sunrise, sunset) {
@@ -208,7 +208,7 @@ function imageGenerator(opt) {
     bitmap.drawTextRight(res.font.black_18, dateStr, 635, 165);
   }
 
-  function drawOutline() {
+  function drawOutline(heating) {
     bitmap.drawFilledRect(0, 0, 159, 20, color.black, color.black);
     bitmap.drawFilledRect(161, 0, 158, 20, color.black, color.black);
     bitmap.drawFilledRect(321, 0, 158, 20, color.black, color.black);
@@ -223,6 +223,11 @@ function imageGenerator(opt) {
 
     bitmap.drawText(res.font.white_18, config.netatmo_config.weather.outside.label, 15, 1);
     bitmap.drawText(res.font.white_18, config.netatmo_config.weather.main_room.label, 175, 1);
+    if (heating) {
+      bitmap.drawBitmap(res.icons.heating, 305, 3, 0);
+    }
+
+
     bitmap.drawText(res.font.white_18, config.netatmo_config.weather.room_1.label, 335, 1);
     bitmap.drawText(res.font.white_18, config.netatmo_config.weather.room_2.label, 495, 1);
   }
@@ -483,6 +488,7 @@ function imageGenerator(opt) {
     res.icons.sunset = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunset.bmp'));
     res.icons.deg = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/deg.bmp'));
     res.icons.predic = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/predic.bmp'));
+    res.icons.heating = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/heating.bmp'));
 
     res.windir_icons = {};
     res.windir_icons.E = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/weather/winddir/E.bmp'));

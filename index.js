@@ -474,6 +474,11 @@ function shouldUpdate(lastVal, newVal) {
 		return true;
 	}
 
+	//heating check
+	if(lastVal.heating != newVal.heating) {
+		return true;
+	}
+
 
 
 
@@ -567,6 +572,21 @@ async function getDataFromNetatmo() {
 		};
 
 		if (config.netatmo_config.heating) {
+
+			let data = JSON.parse(await netatmoGetThermMode(config.netatmo_config.heating.home_id));
+			if(data.body && data.body.home && data.body.home.rooms) {
+				console.log('kjljlkj');
+				let rooms =  data.body.home.rooms;
+				returnVal.heating = false;
+				for (i =0; i< rooms.length && !returnVal.heating; i++ ) {
+					if(rooms[i].heating_power_request > 0 ){
+						returnVal.heating = true;
+						logger.info('[heating] is ON');
+					} 
+				}
+			}
+			
+
 			if (returnVal.main_room.temp > config.netatmo_config.heating.upper_temp) {
 				logger.info('[heating] turning off heating');
 				netatmoSetThermMode(config.netatmo_config.heating.home_id, 'away');
@@ -670,6 +690,33 @@ async function netatmoGetStationData(tries = 3) {
 
 }
 
+async function netatmoGetThermMode(homeid, tries = 3) {
+	try {
+		return await request({
+			method: 'GET',
+			headers: {
+				'accept': 'application/json',
+				'Authorization': 'Bearer ' + config.netatmo_auth.access_token
+			},
+			uri: 'https://api.netatmo.com/api/homestatus?home_id=' + homeid 
+		})
+	}
+	catch (e) {
+		logger.warn(`error ${e.statusCode}`);
+		if (e.statusCode == 403) {
+			await netatmoRenewToken();
+			if (tries > 0) {
+				return netatmoGetThermMode(tries - 1);
+			} else {
+				//no tries left
+				throw e;
+			}
+		} else {
+			logger.error('unexpected error');
+			throw e;
+		}
+	}
+}
 
 async function netatmoSetThermMode(homeid, mode, tries = 3) {
 	try {
