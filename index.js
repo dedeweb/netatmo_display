@@ -575,7 +575,6 @@ async function getDataFromNetatmo() {
 
 			let data = JSON.parse(await netatmoGetThermMode(config.netatmo_config.heating.home_id));
 			if(data.body && data.body.home && data.body.home.rooms) {
-				console.log('kjljlkj');
 				let rooms =  data.body.home.rooms;
 				returnVal.heating = false;
 				for (i =0; i< rooms.length && !returnVal.heating; i++ ) {
