@@ -187,9 +187,10 @@ function imageGenerator(opt) {
         bitmap.drawTextRight(res.font.black_18, data.snow_qty + '', x + 40, y + 147 + vOffset);
         bitmap.drawBitmap(res.icons.cm, x + 45, y + 147 + vOffset);
       } else if (data.rain_qty > 0) {
-        bitmap.drawBitmap(res.icons.rain_red, x + 4, y + 142 + vOffsetDrop);
-        bitmap.drawTextRight(res.font.red_18, '>' + data.rain_qty + '', x + 50, y + 147 + vOffset);
-        bitmap.drawBitmap(res.icons.mm_red, x + 55, y + 147 + vOffset);
+        bitmap.drawBitmap(res.icons.rain, x + 4, y + 142 + vOffsetDrop,color.white);
+        bitmap.drawTextRight(res.font.black_18, '>' + data.rain_qty + '', x + 50, y + 147 + vOffset);
+        bitmap.drawBitmap(res.icons.mm, x + 55, y + 147 + vOffset);
+        
       }
 
       drawHorizDotLine(x + 1, y + 165, horizLineWidth);
@@ -480,10 +481,10 @@ function imageGenerator(opt) {
     res.icons.arrow_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_top_red.bmp'));
     res.icons.arrow_right_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_right_black.bmp'));
     res.icons.rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop.bmp'));
-    res.icons.rain_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop_red.bmp'));
+    // res.icons.rain_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop_red.bmp'));
     res.icons.kph = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/kph.bmp'));
     res.icons.mm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/mm.bmp'));
-    res.icons.mm_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/mm_red.bmp'));
+    // res.icons.mm_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/mm_red.bmp'));
     res.icons.cm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/cm.bmp'));
     res.icons.snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/snow.bmp'));
     res.icons.sunrise = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));
