@@ -172,10 +172,10 @@ function imageGenerator(opt) {
       //  else {
       //   drawPercentBar(data.precip_prob, x + 25,  y + 138, 55, 5, data.precip_prob >= 0.8);
       // }
-
+      let vOffset = centerVertical ? -7 : 0;
+      let vOffsetDrop = centerVertical ? -2 : 0;
       if (data.rain_min && data.rain_max) {
-        let vOffset = centerVertical ? -7 : 0;
-        let vOffsetDrop = centerVertical ? -2 : 0;
+       
 
         bitmap.drawBitmap(res.icons.rain, x + 4, y + 142 + vOffsetDrop);
         bitmap.drawTextRight(res.font.black_18, data.rain_min + ' -' + data.rain_max, x + 61, y + 147 + vOffset);
@@ -183,13 +183,13 @@ function imageGenerator(opt) {
 
 
       } else if (data.snow_qty > 0) {
-        bitmap.drawBitmap(res.icons.snow, x + 5, y + 141);
-        bitmap.drawTextRight(res.font.black_18, data.snow_qty + '', x + 40, y + 147);
-        bitmap.drawBitmap(res.icons.cm, x + 45, y + 147);
+        bitmap.drawBitmap(res.icons.snow, x + 5, y + 141  + vOffsetDrop);
+        bitmap.drawTextRight(res.font.black_18, data.snow_qty + '', x + 40, y + 147 + vOffset);
+        bitmap.drawBitmap(res.icons.cm, x + 45, y + 147 + vOffset);
       } else if (data.rain_qty > 0) {
-        bitmap.drawBitmap(res.icons.rain, x + 4, y + 142);
-        bitmap.drawTextRight(res.font.black_18, data.rain_qty + '', x + 40, y + 147);
-        bitmap.drawBitmap(res.icons.mm, x + 45, y + 147);
+        bitmap.drawBitmap(res.icons.rain_red, x + 4, y + 142 + vOffsetDrop);
+        bitmap.drawTextRight(res.font.red_18, '>' + data.rain_qty + '', x + 50, y + 147 + vOffset);
+        bitmap.drawBitmap(res.icons.mm_red, x + 55, y + 147 + vOffset);
       }
 
       drawHorizDotLine(x + 1, y + 165, horizLineWidth);
@@ -224,7 +224,7 @@ function imageGenerator(opt) {
     bitmap.drawText(res.font.white_18, config.netatmo_config.weather.outside.label, 15, 1);
     bitmap.drawText(res.font.white_18, config.netatmo_config.weather.main_room.label, 175, 1);
     if (heating) {
-      bitmap.drawBitmap(res.icons.heating, 305, 3, 0);
+      bitmap.drawBitmap(res.icons.heating, 240, 4, 0);
     }
 
 
@@ -480,8 +480,10 @@ function imageGenerator(opt) {
     res.icons.arrow_top_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_top_red.bmp'));
     res.icons.arrow_right_black = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/arrow_right_black.bmp'));
     res.icons.rain = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop.bmp'));
+    res.icons.rain_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/raindrop_red.bmp'));
     res.icons.kph = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/kph.bmp'));
     res.icons.mm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/mm.bmp'));
+    res.icons.mm_red = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/mm_red.bmp'));
     res.icons.cm = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/cm.bmp'));
     res.icons.snow = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/snow.bmp'));
     res.icons.sunrise = bmp_lib.BMPBitmap.fromFile(path.join(__dirname, 'glyph/sunrise.bmp'));

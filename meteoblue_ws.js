@@ -88,16 +88,24 @@ function wsMeteoblue(opt) {
 				} else {
 					logger.warn('invalid win dir. Css class', wind_css_class);
 				}
+				let rainStr = $(this).find('.data .tab-precip').text().replace('mm', '').replace('cm', '').trim();
+				let tab_rain;
+				if (rainStr.indexOf('-') >= 0) {
+					tab_rain = rainStr.split('-');
+				} else {
+					tab_rain = [rainStr.replace('>', '').trim()];
+				}
 
-				let tab_rain = $(this).find('.data .tab-precip').text().replace('mm', '').replace('cm', '').trim().split('-');
 				weatherObj.days[index].rain_min = 0;
 				weatherObj.days[index].rain_max = 0;
 				if (tab_rain.length > 0) {
-					weatherObj.days[index].rain_min = tab_rain[0];
+					weatherObj.days[index].rain_min = tab_rain[0] ? tab_rain[0] : 0;
+					weatherObj.days[index].rain_qty = weatherObj.days[index].rain_min;
 				}
 				if (tab_rain.length > 1) {
-					weatherObj.days[index].rain_max = tab_rain[1];
-					weatherObj.days[index].rain_qty = tab_rain[1];
+
+					weatherObj.days[index].rain_max = tab_rain[1] ? tab_rain[1] : 0;
+					weatherObj.days[index].rain_qty = weatherObj.days[index].rain_max;
 					weatherObj.days[index].precip_prob = 1;
 				}
 
@@ -154,16 +162,16 @@ function wsMeteoblue(opt) {
 				try {
 					if (precipBar && precipBar.attr('style')) {
 						let height = precipBar.attr('style').match(/height:(.*)%.*/)[1];
-	
+
 						logger.info('height: ' + height);
 						predic = Math.round((height / 100) * 4);
 						logger.info('predic ' + predic);
 					}
 				}
-				catch(e) {
+				catch (e) {
 					console.log(e);
 				}
-				
+
 
 				// let predic = 0;
 				// //if(precipBar.length) {
