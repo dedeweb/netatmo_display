@@ -51,7 +51,7 @@ function wsMeteoblue(opt) {
 		}
 
 		// console.log(weatherObj);
-		let beginDay = $('#tab_results #tab_wrapper>.tab').first().find('.tab_day_long').text().trim().toLowerCase();
+		let beginDay = $('#tab_results .tab-wrapper>.tab.first').find('.tab-day-long').text().trim().toLowerCase();
 		logger.debug('begin day is ' + beginDay);
 		let shiftDays = 0;
 		if (beginDay === 'demain') {
@@ -60,7 +60,7 @@ function wsMeteoblue(opt) {
 		}
 
 
-		$('#tab_results #tab_wrapper>.tab').each(function (i, elt) {
+		$('#tab_results .tab-wrapper>.tab').each(function (i, elt) {
 			//let day_data = {};
 			//day_data.name = $(this).find('.day .tab_day_short').text().trim();
 			let index = i + shiftDays;
