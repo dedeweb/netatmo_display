@@ -247,10 +247,11 @@ function wsMeteoblue(opt) {
 				return 'light_rain';
 			case 20:
 				return 'mostly_cloudy';
+			case 21:
 			case 22:
 				return 'tstorm_chance';
 			default:
-				logger.warn('unknown code ', nber);
+				logger.warn('unknown code ' + nber);
 				return 'unknown';
 		}
 	}
